@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'map_screen.dart';
 
+
 void main() {
-  // Make sure the Flutter binding is ready **before** any plugin call
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set your Mapbox public access-token once at app start
+  // Set your Mapbox access token
   MapboxOptions.setAccessToken(
-    'pk.eyJ1IjoiamVmZnJleXo0MSIsImEiOiJjbWNhd3dsZHUwOGtkMm1xMHhjNXZoYno3In0.UGzY7ZB9wfxlfjexJJFW8w',
+    'pk.eyJ1IjoiaXRzLWF5bWFubiIsImEiOiJjbWNiMGd3OXQwNDN3MmtvZmtteW9wdWloIn0.LNn78rWGpjC2g81fTb3YRw',
   );
 
   runApp(const LinkUpApp());
@@ -22,7 +22,7 @@ class LinkUpApp extends StatelessWidget {
     return MaterialApp(
       title: 'LinkUp',
       theme: ThemeData(primarySwatch: Colors.indigo),
-      home: const MapScreen(), // your Mapbox page
+      home: const MapScreen(), // Starts with your custom map screen
     );
   }
 }

@@ -19,3 +19,12 @@ class Space {
 
   Space({required this.name});
 }
+
+// ✅ Move this below the class definitions, outside of any class
+final Building mainCampusBadge = Building(
+  id:   'campus',
+  name: 'University of Michigan',
+  lat:  42.2769,
+  lng:  -83.7412,
+  spaces: [],
+);
