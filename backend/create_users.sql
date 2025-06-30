@@ -4,7 +4,7 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(10) UNIQUE NOT NULL
+    phone_number VARCHAR(15) UNIQUE NOT NULL
 );
 
 CREATE TABLE user_profiles (
