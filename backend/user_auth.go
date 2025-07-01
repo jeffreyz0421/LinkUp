@@ -22,6 +22,7 @@ type userInfo struct {
 
 type signupResponse struct {
 	Success  bool   `json:"success"`
+	Error    string `json:"error"`
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	JWTToken string `json:"jwt_token"`
@@ -111,7 +112,7 @@ func main() {
 
 func SignupUser(c *gin.Context) {
 
-	db := c.MustGet("db").(*pgxpool.Conn)
+	db := c.MustGet("db").(*pgxpool.Pool)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -133,7 +134,16 @@ func SignupUser(c *gin.Context) {
 	_, err = db.Exec(ctx, query, user.Username, user.Email, user.Password, user.Name, user.PhoneNumber)
 
 	if err != nil {
-		log.Fatalf("Failed to add user to database: %v\n", err)
+		// log.Fatalf("Failed to add user to database: %v\n", err)
+		failed := signupResponse{
+			Username: user.Username,
+			Success:  true,
+			UserID:   "testUUID",
+			JWTToken: "testJWT",
+			Error:    "Username taken :(",
+		}
+		c.IndentedJSON(http.StatusNotAcceptable, failed)
+		c.Next()
 	}
 
 	success := signupResponse{
