@@ -1,0 +1,70 @@
+PODS:
+  - Flutter (1.0.0)
+  - geolocator_apple (1.2.0):
+    - Flutter
+    - FlutterMacOS
+  - image_picker_ios (0.0.1):
+    - Flutter
+  - mapbox_maps_flutter (2.9.0):
+    - Flutter
+    - MapboxMaps (= 11.13.0)
+    - Turf (= 4.0.0)
+  - MapboxCommon (24.13.0):
+    - Turf (= 4.0.0)
+  - MapboxCoreMaps (11.13.0):
+    - MapboxCommon (= 24.13.0)
+  - MapboxMaps (11.13.0):
+    - MapboxCommon (= 24.13.0)
+    - MapboxCoreMaps (= 11.13.0)
+    - Turf (= 4.0.0)
+  - permission_handler_apple (9.3.0):
+    - Flutter
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - Turf (4.0.0)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - mapbox_maps_flutter (from `.symlinks/plugins/mapbox_maps_flutter/ios`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+
+SPEC REPOS:
+  trunk:
+    - MapboxCommon
+    - MapboxCoreMaps
+    - MapboxMaps
+    - Turf
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  geolocator_apple:
+    :path: ".symlinks/plugins/geolocator_apple/darwin"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  mapbox_maps_flutter:
+    :path: ".symlinks/plugins/mapbox_maps_flutter/ios"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+
+SPEC CHECKSUMS:
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
+  image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
+  mapbox_maps_flutter: 36bce1e084f6aca22ea3a58a35429fda15be29fc
+  MapboxCommon: 5f918338024f4f33a07013dbc51ab222a1d41a7c
+  MapboxCoreMaps: 8bf3572e446be27508bfba0b4580ad5e9b1a577d
+  MapboxMaps: c553f390b0e0eed0cc68710a6cee7ba5fa3143b3
+  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  Turf: c9eb11a65d96af58cac523460fd40fec5061b081
+
+PODFILE CHECKSUM: 2ae60bfd06f38f7b88e1e88d116eab92d6f5f026
+
+COCOAPODS: 1.16.2
