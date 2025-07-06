@@ -54,7 +54,7 @@ func getJWTSecret() string {
 	return "nGcKdoMsxUeoVICLQYGX4CG2S4rs2e1QRasxo29yPbM="
 }
 
-func ValidateUserInput(userInfo UserInfo) (bool, error) {
+func ValidateUserInput(userInfo *UserInfo) (bool, error) {
 	// Emails
 	if userInfo.Email == "" && userInfo.PhoneNumber == "" && userInfo.Username == "" {
 		return false, errors.New("no identifier provided")
@@ -84,6 +84,7 @@ func ValidateUserInput(userInfo UserInfo) (bool, error) {
 		if !digitPattern.MatchString(cleaned) {
 			return false, errors.New("invalid phone number")
 		}
+		userInfo.PhoneNumber = cleaned
 	}
 
 	// Username
@@ -112,7 +113,7 @@ func GenerateJWT(user UserInfo) (string, error) {
 
 	// Create the token with claims and sign it with our secret
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(getJWTSecret())
+	tokenString, err := token.SignedString([]byte(getJWTSecret()))
 	if err != nil {
 		return "", err
 	}
@@ -127,7 +128,7 @@ func validateJWT(tokenString string) (*Claims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
-		return getJWTSecret(), nil
+		return []byte(getJWTSecret()), nil
 	})
 
 	if err != nil {
@@ -184,7 +185,7 @@ func main() {
 	})
 
 	router.POST("/usersignup", SignupUser)
-	router.GET("/userlogin", LoginUser)
+	router.POST("/userlogin", LoginUser)
 
 	protected := router.Group("/api")
 
@@ -269,7 +270,7 @@ func LoginUser(c *gin.Context) {
 
 	var query string
 
-	validInp, err := ValidateUserInput(user)
+	validInp, err := ValidateUserInput(&user)
 
 	if !validInp {
 		failed.Error = err.Error()
@@ -282,17 +283,20 @@ func LoginUser(c *gin.Context) {
 	var passwordHash string
 
 	if user.Username != "" {
+		id = user.Username
 		query = `
-			SELECT user_id, password_hash FROM users WHERE username == $1
+			SELECT userid, password_hash FROM users WHERE username = $1;
 		`
 
 	} else if user.Email != "" {
+		id = user.Email
 		query = `
-			SELECT user_id, username, password_hash FROM users WHERE email == $1
+			SELECT userid, username, password_hash FROM users WHERE email = $1;
 		`
 	} else {
+		id = user.PhoneNumber
 		query = `
-			SELECT user_id, username, password_hash FROM users WHERE phone_number == $1
+			SELECT userid, username, password_hash FROM users WHERE phone_number = $1;
 		`
 	}
 
@@ -351,7 +355,7 @@ func SignupUser(c *gin.Context) {
 		return
 	}
 
-	validInp, err := ValidateUserInput(user)
+	validInp, err := ValidateUserInput(&user)
 
 	if !validInp {
 		failed.Error = err.Error()
@@ -359,6 +363,7 @@ func SignupUser(c *gin.Context) {
 		return
 	}
 
+	fmt.Println(user.Password)
 	passwordHash, err := HashPassword(user.Password)
 
 	if err != nil {
@@ -369,14 +374,16 @@ func SignupUser(c *gin.Context) {
 
 	query := `
 		INSERT INTO users (username, email, password_hash, name, phone_number)
-		VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
+		VALUES ($1, $2, $3, $4, $5) RETURNING userid;
 	`
 
 	_, err = db.Exec(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber)
 
 	if err != nil {
+		fmt.Printf("Error: %v\n", err.Error())
 		failed.Error = "unable to signup user"
 		c.IndentedJSON(http.StatusNotAcceptable, failed)
+		return
 	}
 
 	success := AuthResponse{
@@ -389,6 +396,7 @@ func SignupUser(c *gin.Context) {
 	success.AccessToken, err = GenerateJWT(user)
 
 	if err != nil {
+		fmt.Printf("Error: %v\n", err.Error())
 		failed.Error = "failed to generate access token"
 		c.IndentedJSON(http.StatusInternalServerError, failed)
 		return
