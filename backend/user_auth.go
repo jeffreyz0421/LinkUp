@@ -35,7 +35,6 @@ type AuthResponse struct {
 	UserID      string `json:"user_id"`
 	Username    string `json:"username"`
 	AccessToken string `json:"access_token"`
-	// RefreshToken string `json:"refresh_token"`
 }
 
 type JWTSecret struct {
@@ -59,6 +58,7 @@ func ValidateUserInput(userInfo *UserInfo) (bool, error) {
 	if userInfo.Email == "" && userInfo.PhoneNumber == "" && userInfo.Username == "" {
 		return false, errors.New("no identifier provided")
 	}
+
 	if userInfo.Email != "" {
 		userInfo.Email = strings.TrimSpace(userInfo.Email)
 
@@ -143,16 +143,7 @@ func validateJWT(tokenString string) (*Claims, error) {
 	return nil, errors.New("invalid token")
 }
 
-func HashPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
-	if err != nil {
-		return "", err
-	}
-	return string(hash), nil
-}
-
 func main() {
-
 	// Set up connection to PostgreSQL database
 
 	connectionURL := os.Getenv("DATABASE_URL")
@@ -194,20 +185,6 @@ func main() {
 	router.Run("localhost:8080")
 }
 
-func CheckPassword(password string, hash string) bool {
-	newHash, err := HashPassword(password)
-
-	if err != nil {
-		log.Printf("Failed to hash password: %v", err)
-		return false
-	}
-
-	if newHash == hash {
-		return true
-	}
-	return false
-}
-
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get the Authorization header
@@ -243,6 +220,14 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Continue to the next handler
 		c.Next()
 	}
+}
+
+func HashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }
 
 func LoginUser(c *gin.Context) {
@@ -285,9 +270,8 @@ func LoginUser(c *gin.Context) {
 	if user.Username != "" {
 		id = user.Username
 		query = `
-			SELECT userid, password_hash FROM users WHERE username = $1;
+			SELECT userid, username, password_hash FROM users WHERE username = $1;
 		`
-
 	} else if user.Email != "" {
 		id = user.Email
 		query = `
@@ -315,7 +299,8 @@ func LoginUser(c *gin.Context) {
 		}
 	}
 
-	if !CheckPassword(user.Password, passwordHash) {
+	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(user.Password))
+	if err != nil {
 		failed.Error = "wrong password"
 		c.IndentedJSON(http.StatusUnauthorized, failed)
 		return
