@@ -182,7 +182,7 @@ func main() {
 
 	protected.Use(AuthMiddleware())
 
-	router.Run("localhost:8080")
+	router.Run("0.0.0.0:8080")
 }
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -348,7 +348,6 @@ func SignupUser(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(user.Password)
 	passwordHash, err := HashPassword(user.Password)
 
 	if err != nil {
@@ -358,27 +357,38 @@ func SignupUser(c *gin.Context) {
 	}
 
 	query := `
+		SELECT username FROM users WHERE username = $1 OR phone_number = $2 OR email = $3;
+	`
+
+	err = db.QueryRow(ctx, query, user.Username, user.PhoneNumber, user.Email).Scan()
+
+	if err != nil && err == pgx.ErrNoRows {
+		failed.Error = "username, phone number, or email already exists"
+		c.IndentedJSON(http.StatusConflict, failed)
+		return
+	}
+
+	query = `
 		INSERT INTO users (username, email, password_hash, name, phone_number)
 		VALUES ($1, $2, $3, $4, $5) RETURNING userid;
 	`
 
-	_, err = db.Exec(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber)
+	var userID string
+
+	err = db.QueryRow(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber).Scan(userID)
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err.Error())
 		failed.Error = "unable to signup user"
-		c.IndentedJSON(http.StatusNotAcceptable, failed)
+		c.IndentedJSON(http.StatusInternalServerError, failed)
 		return
 	}
 
 	success := AuthResponse{
-		Username:    user.Username,
-		Success:     true,
-		UserID:      "testUUID",
-		AccessToken: "testJWT",
+		Username: user.Username,
+		Success:  true,
 	}
-
 	success.AccessToken, err = GenerateJWT(user)
+	success.UserID = userID
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err.Error())

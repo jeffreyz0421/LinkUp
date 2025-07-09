@@ -1,0 +1,957 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.788144,
+          43.0015192
+        ]
+      },
+      "properties": {
+        "name": "Bonner Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7882336,
+          43.0025169
+        ]
+      },
+      "properties": {
+        "name": "Ketter Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7889033,
+          42.9942685
+        ]
+      },
+      "properties": {
+        "name": "Baker Chilled Water Plant",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7928943,
+          42.9921606
+        ]
+      },
+      "properties": {
+        "name": "Center for Tomorrow",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7807159,
+          42.9985576
+        ]
+      },
+      "properties": {
+        "name": "Bissell Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7872392,
+          42.9976401
+        ]
+      },
+      "properties": {
+        "name": "Flint Village Community Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7957488,
+          42.9933226
+        ]
+      },
+      "properties": {
+        "name": "John Beane Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7957137,
+          42.99385
+        ]
+      },
+      "properties": {
+        "name": "John Beane Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7952413,
+          42.9918221
+        ]
+      },
+      "properties": {
+        "name": "Helm Warehouse",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7943674,
+          42.9931799
+        ]
+      },
+      "properties": {
+        "name": "Statler Food Commissary",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7943683,
+          42.9933441
+        ]
+      },
+      "properties": {
+        "name": "Statler Food Commissary",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.79437,
+          42.9936251
+        ]
+      },
+      "properties": {
+        "name": "Statler Food Commissary",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7944929,
+          42.9939322
+        ]
+      },
+      "properties": {
+        "name": "Statler Food Commissary",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7952432,
+          42.9949887
+        ]
+      },
+      "properties": {
+        "name": "Crofts Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7954872,
+          42.9944573
+        ]
+      },
+      "properties": {
+        "name": "HRD Building",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7955129,
+          42.9943921
+        ]
+      },
+      "properties": {
+        "name": "HRD Building",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7801573,
+          43.0069447
+        ]
+      },
+      "properties": {
+        "name": "Saint Pauls Church",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7790129,
+          42.9998169
+        ]
+      },
+      "properties": {
+        "name": "Morris Sports Performance Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7850241,
+          43.0085454
+        ]
+      },
+      "properties": {
+        "name": "Academic Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.78544,
+          43.0075414
+        ]
+      },
+      "properties": {
+        "name": "Fargo Quadrangle",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7842101,
+          43.0095961
+        ]
+      },
+      "properties": {
+        "name": "Spaulding Quadrangle",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7856437,
+          43.0096808
+        ]
+      },
+      "properties": {
+        "name": "Richmond Quadrangle",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7866073,
+          43.0089313
+        ]
+      },
+      "properties": {
+        "name": "Red Jacket Quadrangle",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7836676,
+          43.0088258
+        ]
+      },
+      "properties": {
+        "name": "Wilkeson Quadrangle",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7850032,
+          43.0065111
+        ]
+      },
+      "properties": {
+        "name": "Greiner Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7863732,
+          43.0091796
+        ]
+      },
+      "properties": {
+        "name": "Crossroads Culinary Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.8002749,
+          43.002821
+        ]
+      },
+      "properties": {
+        "name": "Baird Research Park",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7943085,
+          43.0024719
+        ]
+      },
+      "properties": {
+        "name": "Roosevelt Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7943048,
+          43.0019065
+        ]
+      },
+      "properties": {
+        "name": "Lehman Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7950789,
+          43.0019042
+        ]
+      },
+      "properties": {
+        "name": "Clinton Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7950829,
+          43.0024709
+        ]
+      },
+      "properties": {
+        "name": "Dewey Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7945016,
+          42.9986151
+        ]
+      },
+      "properties": {
+        "name": "Hadley Community Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7823691,
+          42.9978153
+        ]
+      },
+      "properties": {
+        "name": "Campus Mail Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7766148,
+          42.9991673
+        ]
+      },
+      "properties": {
+        "name": "East Grandstand",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7783998,
+          42.9990897
+        ]
+      },
+      "properties": {
+        "name": "West Grandstand",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7775115,
+          42.9982263
+        ]
+      },
+      "properties": {
+        "name": "South Grandstand",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7789635,
+          43.0030747
+        ]
+      },
+      "properties": {
+        "name": "South Lake Village Community Building",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7814557,
+          43.0030589
+        ]
+      },
+      "properties": {
+        "name": "Baird Point Columns",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7870921,
+          43.0019359
+        ]
+      },
+      "properties": {
+        "name": "Furnas Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7870567,
+          43.0023069
+        ]
+      },
+      "properties": {
+        "name": "Jarvis Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7872888,
+          43.002663
+        ]
+      },
+      "properties": {
+        "name": "Davis Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.784902,
+          43.001877
+        ]
+      },
+      "properties": {
+        "name": "The Commons",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.784678,
+          43.0027313
+        ]
+      },
+      "properties": {
+        "name": "University Bookstore",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7812148,
+          43.0001635
+        ]
+      },
+      "properties": {
+        "name": "Alumni Arena",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7829062,
+          43.0010256
+        ]
+      },
+      "properties": {
+        "name": "Center for the Arts",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7849674,
+          43.0003723
+        ]
+      },
+      "properties": {
+        "name": "Clemens Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7844744,
+          43.0000838
+        ]
+      },
+      "properties": {
+        "name": "Baird Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7840059,
+          43.0004542
+        ]
+      },
+      "properties": {
+        "name": "Slee Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7880174,
+          42.9997384
+        ]
+      },
+      "properties": {
+        "name": "Park Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7869036,
+          42.9995529
+        ]
+      },
+      "properties": {
+        "name": "Jacobs Management Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.787041,
+          42.9998373
+        ]
+      },
+      "properties": {
+        "name": "Alfiero Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7920234,
+          42.9997702
+        ]
+      },
+      "properties": {
+        "name": "Dorsheimer Laboratory/Greenhouse",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7906921,
+          42.9999909
+        ]
+      },
+      "properties": {
+        "name": "Hochstetter Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7915135,
+          42.9999882
+        ]
+      },
+      "properties": {
+        "name": "Cooke Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7917733,
+          43.0007547
+        ]
+      },
+      "properties": {
+        "name": "Natural Sciences Complex",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7918858,
+          43.0012568
+        ]
+      },
+      "properties": {
+        "name": "Computing Center",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7909042,
+          43.0012576
+        ]
+      },
+      "properties": {
+        "name": "Fronczak Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7927905,
+          43.0012316
+        ]
+      },
+      "properties": {
+        "name": "Mathematics Building",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7895444,
+          43.0009002
+        ]
+      },
+      "properties": {
+        "name": "Capen Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7902817,
+          43.0007298
+        ]
+      },
+      "properties": {
+        "name": "Talbert Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7886527,
+          43.0010204
+        ]
+      },
+      "properties": {
+        "name": "Norton Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7878961,
+          43.0010503
+        ]
+      },
+      "properties": {
+        "name": "Knox Lecture Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7880296,
+          43.0004057
+        ]
+      },
+      "properties": {
+        "name": "O'Brian Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7860551,
+          43.0002523
+        ]
+      },
+      "properties": {
+        "name": "Lockwood Memorial Library",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7870683,
+          43.0003887
+        ]
+      },
+      "properties": {
+        "name": "Baldy Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7862539,
+          43.0011849
+        ]
+      },
+      "properties": {
+        "name": "Student Union",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7870873,
+          43.0015322
+        ]
+      },
+      "properties": {
+        "name": "Bell Hall",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7775282,
+          43.0005371
+        ]
+      },
+      "properties": {
+        "name": "Murchie Field House",
+        "icon": "Screenshot%202025-06-29%20at%2012.45.41%20AM-fotor-bg-remover-2025062904622"
+      }
+    }
+  ]
+}
