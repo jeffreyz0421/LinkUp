@@ -1,0 +1,174 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+         -83.73717624043609, 42.27565299252852
+        ]
+      },
+      "properties": {
+        "name": "Shapiro Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -83.7379, 42.2763
+        ]
+      },
+      "properties": {
+        "name": "Hatcher Graduate Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { 
+        "type": "Point",
+        "coordinates": [ -83.73792916995158, 42.27551066017079] 
+        },
+      "properties": { 
+        "name": "Clements Library", 
+        "type": "library" 
+        }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+           -83.73924748543361, 42.275539143129905
+        ]
+      },
+      "properties": {
+        "name": "Fine Arts Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+         -83.73907512187604, 42.27379532190088
+        ]
+      },
+      "properties": {
+        "name": "Law Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -83.73686364139739, 42.27297215914148
+        ]
+      },
+      "properties": {
+        "name": "Kresge Business Administration Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+           -83.72755744585066, 42.236329389718435
+        ]
+      },
+      "properties": {
+        "name": "Museums Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -83.73426406148067, 42.283506016032476
+        ]
+      },
+      "properties": {
+        "name": "Taubman Health Sciences Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+         -83.74709577269438, 42.27091174969021
+        ]
+      },
+      "properties": {
+        "name": "Buhr Shelving Facility",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -83.72099002235858, 42.29044684141073
+        ]
+      },
+      "properties": {
+        "name": "Music Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+           -83.71541705028235, 42.29094867932465
+        ]
+      },
+      "properties": {
+        "name": "Art, Architechture and Engineering Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+           -83.71219269566379, 42.289627703620006
+        ]
+      },
+      "properties": {
+        "name": "Bently Historical Library",
+        "type": "library"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -83.71231890082808, 42.28858479192688
+        ]
+      },
+      "properties": {
+        "name": "Gerald R. Ford Library",
+        "type": "library"
+      }
+    }
+
+    
+  ]
+}

@@ -1,0 +1,61 @@
+name: linkup
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.8.1 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Map and Location
+  mapbox_maps_flutter: ^2.9.0
+  geolocator: ^14.0.1
+  permission_handler: ^12.0.0+1
+  
+  # Data Handling
+  shared_preferences: ^2.2.2
+  http: ^1.2.1
+  uuid: ^4.0.0
+  collection: ^1.17.2
+  
+  # Media
+  image: ^4.1.3
+  image_picker: ^1.1.0
+  
+  # UI
+  bubble: ^1.2.1
+  
+  # Configuration
+  flutter_dotenv: ^5.1.0
+  
+  # Add these recommended packages:
+  intl: ^0.18.1  # For internationalization
+  flutter_secure_storage: ^8.0.0  # For sensitive data
+  provider: ^6.1.1  # State management
+
+  cached_network_image: ^3.3.0  # For image caching
+  dio: ^5.4.0  # Advanced HTTP client
+  url_launcher: ^6.2.0  # For launching URLs
+  connectivity_plus: ^5.0.0  # Network connectivity
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.6  # For code generation
+  flutter_native_splash: ^2.3.2
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - assets/
+    - assets/transparent_160x160.png    # your badge icon
+    - assets/top_us_universities_full.geojson    # ⬅️ NEW (exact path / name)
+    - assets/default_pfp.png
+    - assets/UMICH_LinkUp_Logo.jpeg
+
