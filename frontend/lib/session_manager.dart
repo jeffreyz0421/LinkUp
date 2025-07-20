@@ -1,60 +1,68 @@
-
-// ███  session_manager.dart  ███
-//
-// Tiny singleton that caches session‑wide values:
-//
-//   • JWT access‑token           (key: auth_token)
-//   • Signed‑in user‑id / uuid   (key: user_id)
-//
-//   SessionManager.instance           → the singleton
-//   instance.token  (Future<String?>)
-//   instance.userId (Future<String?>)
-//   instance.setSession({required jwt, required userId})
-//   instance.clear()                       // log‑out helper
-//
-// Add more fields the same way (username, avatar, etc.) if needed.
-//
-
 import 'package:shared_preferences/shared_preferences.dart';
-/// session_manager.dart
+
 class SessionManager {
   /* ---------- singleton ---------- */
-  SessionManager._();                    // private ctor
+  SessionManager._();
   static final SessionManager instance = SessionManager._();
 
-  /* ---------- runtime state ---------- */
-  String? _userId;                       // null / ''  ==> guest
+  /* ---------- in‑memory state ---------- */
+  String? _userId;                 // null / guest
   String? _jwt;
-  bool    get isGuest => _userId == null || _userId!.isEmpty;
+  String? _primaryCommunityId;     // null until a community is chosen
 
+  /* ---------- convenience ---------- */
+  bool get isGuest => _userId == null || _userId!.isEmpty;
+
+  /// Synchronous getter – used by UI layers that just need the cached value.
+  String? get primaryCommunityIdSync => _primaryCommunityId;
+
+  /* ---------- update (call after login / join community) ---------- */
+  ///
+  /// Pass `primaryCommunityId` *only* when it changes (e.g. user just joined
+  /// or switched). Leave it `null` to keep the previous value.
+  ///
   Future<void> update({
     required String? userId,
     required String? jwt,
+    String? primaryCommunityId,
   }) async {
-    _userId = userId;
-    _jwt    = jwt;
-    // Persist only if NOT guest
+    _userId             = userId;
+    _jwt                = jwt;
+    _primaryCommunityId = primaryCommunityId ?? _primaryCommunityId;
+
     final sp = await SharedPreferences.getInstance();
     if (isGuest) {
-      await sp.clear();                  // 👈 wipe everything
-    } else {
-      await sp.setString('user_id', userId!);
-      await sp.setString('jwt', jwt!);
+      await sp.clear();                       // wipe everything for guests
+      return;
+    }
+
+    await sp.setString('user_id', userId!);
+    await sp.setString('jwt', jwt!);
+    if (_primaryCommunityId != null) {
+      await sp.setString('primary_community', _primaryCommunityId!);
     }
   }
 
-  Future<String?> get userId async {                // return nullable
-  if (_userId != null) return _userId;            // may already be null
-  final sp = await SharedPreferences.getInstance();
-  _userId = sp.getString('user_id');              // <- NO default ''
-  return _userId;                                 // null => guest
-}
+  /* ---------- lazy async getters ---------- */
+  Future<String?> get userId async {
+    if (_userId != null) return _userId;
+    final sp = await SharedPreferences.getInstance();
+    _userId = sp.getString('user_id');
+    return _userId;
+  }
 
   Future<String?> get jwt async {
     if (_jwt != null) return _jwt;
     final sp = await SharedPreferences.getInstance();
     _jwt = sp.getString('jwt');
     return _jwt;
+  }
+
+  Future<String?> get primaryCommunityId async {
+    if (_primaryCommunityId != null) return _primaryCommunityId;
+    final sp = await SharedPreferences.getInstance();
+    _primaryCommunityId = sp.getString('primary_community');
+    return _primaryCommunityId;
   }
 }
 

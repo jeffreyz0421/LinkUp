@@ -16,6 +16,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'add_a_friend.dart'; 
 
 import 'cas.dart';                // for the centred +
 import 'session_manager.dart';   // to detect guest / user‑id
@@ -30,8 +31,35 @@ class Friend {
   final String name;
   final String username;
   final String avatarUrl;
-  Friend(this.id, this.name, this.username, this.avatarUrl);
+
+  /// UI‑only for now – will be filled by backend later
+  final String where;          // e.g. “Ann Arbor”
+  final int    lastSeen;       // minutes ago
+
+  Friend(
+    this.id,
+    this.name,
+    this.username,
+    this.avatarUrl, {
+    required this.where,
+    required this.lastSeen,
+  });
 }
+
+final List<Friend> _dummyFriends = [
+  Friend('1','Tony Soprano','@waste_mgmt',
+         'https://i.pravatar.cc/150?img=68',
+         where: 'Ann Arbor',  lastSeen: 24),
+  Friend('2','Walter White','@heisenberg',
+         'https://i.pravatar.cc/150?img=32',
+         where: 'Detroit',    lastSeen: 5),
+  Friend('3','Marty Byrde','@financials',
+         'https://i.pravatar.cc/150?img=15',
+         where: 'Chicago',    lastSeen: 120),
+  Friend('d4', 'Michael Scott',  '@dundermifflin',
+          'https://i.pravatar.cc/150?img=12',
+          where: 'Dubai',    lastSeen: 51),
+];
 
 /* ═════════════════  FriendsScreen  ═════════════════ */
 class FriendsScreen extends StatefulWidget {
@@ -69,20 +97,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> _bootstrap() async {
-    // determine guest / signed‑in
-    _isGuest = await SessionManager.instance.isGuest;
+  _isGuest = await SessionManager.instance.isGuest;
 
-    if (!_isGuest) {
-      // TODO: pull real data
-      _friends = [
-        Friend('1', 'Tony Soprano',  '@waste_mgmt', 'https://i.pravatar.cc/150?img=68'),
-        Friend('2', 'Walter White',  '@heisenberg',  'https://i.pravatar.cc/150?img=32'),
-        Friend('3', 'Marty Byrde',   '@financials',  'https://i.pravatar.cc/150?img=15'),
-      ];
-    }
+  // always inject the stand‑ins while backend isn’t ready
+  _friends = List.of(_dummyFriends);
 
-    if (mounted) setState(() => _loading = false);
-  }
+  _isGuest = false;          // <── force‑show list
+
+  if (mounted) setState(() => _loading = false);
+}
+
 
   /* ═════════════════  BUILD  ═════════════════ */
   @override
@@ -140,10 +164,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   Widget _addTile() => GestureDetector(
         onTap: () {
-          // TODO: open “add friend” flow
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Add‑friend coming soon')));
-        },
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AddFriendScreen()),
+            );
+          },
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
@@ -166,23 +190,46 @@ class _FriendsScreenState extends State<FriendsScreen> {
       );
 
   Widget _friendTile(Friend f) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(children: [
-          CircleAvatar(radius: 28, backgroundImage: NetworkImage(f.avatarUrl)),
-          const SizedBox(width: 16),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(f.name, style: const TextStyle(fontSize: 18)),
+  margin: const EdgeInsets.only(bottom: 12),
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: Row(
+    children: [
+      CircleAvatar(radius: 28, backgroundImage: NetworkImage(f.avatarUrl)),
+      const SizedBox(width: 16),
+
+      // ── left block: name + @user
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(f.name,  style: const TextStyle(fontSize: 18)),
             Text(f.username,
                 style: const TextStyle(
                     fontSize: 14, color: Colors.grey, letterSpacing: .2)),
-          ]),
-        ]),
-      );
+          ],
+        ),
+      ),
+
+      // ── right block: location + time
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('in ${f.where}',
+              style: const TextStyle(
+                  fontSize: 14, color: Colors.green)),
+          Text('${f.lastSeen} m ago',
+              style: const TextStyle(
+                  fontSize: 12, color: Colors.grey)),
+        ],
+      ),
+    ],
+  ),
+);
+
 
   /* ───── bottom nav (Friends highlighted) ───── */
   Widget _bottomNav(BuildContext ctx) => Align(
