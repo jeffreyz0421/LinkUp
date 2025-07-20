@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 
 import 'cas.dart';
+import 'friends_screen.dart'; 
 import 'profile_screen.dart';
 import 'main_screen_logic.dart';
 
@@ -166,7 +167,11 @@ class _MapScreenState extends MapScreenLogicState<MapScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(Icons.people_alt,   'Friends', onTap: () {}),
+              // ───────── Friends tab ─────────
+              _navItem(Icons.people_alt, 'Friends', onTap: () {
+                  Navigator.of(ctx).push(
+                  MaterialPageRoute(builder: (_) => const FriendsScreen()));
+                }),
               _navItem(Icons.home_rounded, 'Comm',    onTap: () {}),
               const SizedBox(width: _centerFabSize), // spacer for big “+”
               _navItem(Icons.link_outlined, 'Links',  onTap: () {}),
@@ -189,8 +194,8 @@ class _MapScreenState extends MapScreenLogicState<MapScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 24, color: Colors.grey.shade700),
-              const SizedBox(height: 4),
+              Icon(icon, size: 20, color: Colors.grey.shade700),
+              const SizedBox(height: 2),
               Text(label,
                   style: TextStyle(
                       fontSize: 12,
