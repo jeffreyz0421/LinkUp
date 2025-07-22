@@ -210,7 +210,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         _navItem(Icons.people_alt, 'Friends',
             onTap: () => Navigator.pop(ctx)),           // back to Friends/Map
-        _navItem(Icons.home_rounded, 'Comm',
+        _navItem(Icons.home_rounded, 'Comunity',
             isActive: true, onTap: () {}),
         const SizedBox(width: _centerFabSize),
         _navItem(Icons.link_outlined, 'Links', onTap: () {}),

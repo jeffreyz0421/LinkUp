@@ -252,7 +252,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             children: [
               _navItem(Icons.people_alt,   'Friends',
                   isActive: true, onTap: () {}),
-              _navItem(Icons.home_rounded, 'Comm',    onTap: () {}),
+              _navItem(Icons.home_rounded, 'Comunity',    onTap: () {}),
               const SizedBox(width: _centerFabSize),
               _navItem(Icons.link_outlined, 'Links',  onTap: () {}),
               _navItem(Icons.person_outline,'Profile', onTap: () {

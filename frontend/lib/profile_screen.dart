@@ -118,19 +118,25 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _bootstrap() async {
-    // 1) who am I?
-    _userId = await SessionManager.instance.userId;   // null → guest
-
-    // 2) load local cache (name/email…)
+  try {
+    debugPrint('[profile] bootstrapping...');
+    _userId = await SessionManager.instance.userId;
+    debugPrint('[profile] userId: $_userId');
     await _loadLocalProfile();
-
-    // 3) for real users pull hobbies from server
+    debugPrint('[profile] loaded local profile');
     if (!_isGuest) {
-      await _fetchHobbies();     // errors are swallowed inside
+      debugPrint('[profile] fetching hobbies...');
+      await _fetchHobbies();
+      debugPrint('[profile] hobbies loaded');
     }
-
+  } catch (e) {
+    debugPrint('🛑 Bootstrap failed: $e');
+  } finally {
+    debugPrint('[profile] done bootstrapping');
     if (mounted) setState(() => _loading = false);
   }
+}
+
 
   /* ── local SharedPreferences ── */
   Future<void> _loadLocalProfile() async {
@@ -457,7 +463,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             blurRadius:12,offset:Offset(0,-4))]),
       child:Row(mainAxisAlignment:MainAxisAlignment.spaceAround,children:[
         _navItem(Icons.people_alt,'Friends',onTap:(){}),
-        _navItem(Icons.home_rounded,'Comm',onTap:(){}),
+        _navItem(Icons.home_rounded,'Comunity',onTap:(){}),
         const SizedBox(width:_centerFabSize),
         _navItem(Icons.link_outlined,'Links',onTap:(){}),
         _navItem(Icons.person_outline,'Profile',

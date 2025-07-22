@@ -24,6 +24,7 @@ import 'community_screen.dart';
 import 'profile_screen.dart';
 import 'main_screen_logic.dart';
 import 'session_manager.dart';   // ← added
+import 'links_screen.dart';
 
 /* ───── sizing ───── */
 const double _navBarHeight  = 88.0;
@@ -184,12 +185,15 @@ class _MapScreenState extends MapScreenLogicState<MapScreen> {
                 Navigator.of(ctx).push(MaterialPageRoute(
                     builder: (_) => const FriendsScreen()));
               }),
-              _navItem(Icons.home_rounded, 'Comm', onTap: () {
+              _navItem(Icons.home_rounded, 'Comunity', onTap: () {
                 Navigator.of(ctx).push(MaterialPageRoute(
                     builder: (_) => const CommunityScreen()));
               }),
               const SizedBox(width: _centerFabSize),
-              _navItem(Icons.link_outlined, 'Links', onTap: () {}),
+              _navItem(Icons.link_outlined, 'Links', onTap: () {
+                Navigator.of(ctx).push(MaterialPageRoute(
+                    builder: (_) => const LinksScreen()));
+              }),
               _navItem(Icons.person_outline, 'Profile', onTap: () {
                 Navigator.of(ctx).push(MaterialPageRoute(
                     builder: (_) => const ProfileScreen()));

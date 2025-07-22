@@ -31,12 +31,15 @@ class ProfileService {
     final token  = await SessionManager.instance.jwt;
     final uri    = Uri.parse('$_base/api/profile/$userId/hobbies');
 
-    final resp = await _client.get(
+    final resp = await _client
+    .get(
       uri,
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type' : 'application/json',
-      });
+      })
+    .timeout(const Duration(milliseconds: 500));
+
 
     if (resp.statusCode == 200) {
       final decoded = jsonDecode(resp.body) as List<dynamic>;
@@ -54,14 +57,17 @@ class ProfileService {
     final token = await SessionManager.instance.jwt;
     final uri   = Uri.parse('$_base/api/profile/$userId/hobbies');
 
-    final resp = await _client.post(
+    final resp = await _client
+    .post(
       uri,
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type' : 'application/json',
       },
       body: jsonEncode(hobbies),
-    );
+    )
+    .timeout(const Duration(milliseconds: 500));
+
 
     if (resp.statusCode == 200 || resp.statusCode == 204) return;
 

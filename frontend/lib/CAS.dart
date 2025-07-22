@@ -22,121 +22,158 @@ class CASScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // ------------------------------------------------------------------
-          // Background blobs
-          // ------------------------------------------------------------------
-          const _BlurCircle(
-            diameter: 934,
-            sigma: 295.5,
-            offset: Offset(27, 419),
-            color: Color(0xFF9EF4E2),
-          ),
-          const _BlurCircle(
-            diameter: 582,
-            sigma: 184.14,
-            offset: Offset(-229, -163),
-            color: Color(0xFF6F87FF),
-          ),
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
+            // ------------------------------------------------------------------
+            // Background blobs (stretch to full screen)
+            // ------------------------------------------------------------------
+            const _BlurCircle(
+              diameter: 934,
+              sigma: 295.5,
+              offset: Offset(27, 419),
+              color: Color(0xFF9EF4E2),
+            ),
+            const _BlurCircle(
+              diameter: 582,
+              sigma: 184.14,
+              offset: Offset(-229, -163),
+              color: Color(0xFF6F87FF),
+            ),
 
-          // ------------------------------------------------------------------
-          // Main content
-          // ------------------------------------------------------------------
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back arrow
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const MapScreen()),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: CustomPaint(
-                        size: const Size(36, 34),
-                        painter: BackArrowPainter(),
+            // ------------------------------------------------------------------
+            // Main content
+            // ------------------------------------------------------------------
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Back arrow
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MapScreen()),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: CustomPaint(
+                          size: const Size(36, 34),
+                          painter: BackArrowPainter(),
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 48),
+                    const SizedBox(height: 32),
 
-                  // Title
-                  Center(
-                    child: Text(
-                      "What's the vibe today?",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                        color: Color(0xFF3535D1),
+                    // Title with white outline behind
+                    Center(
+                      child: Stack(
+                        children: [
+                          // White glow / outline version
+                          const Text(
+                            "What's the vibe today?",
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(0, 0),
+                                  blurRadius: 3,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Real foreground title
+                          const Text(
+                            "What's the vibe today?",
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                              color: Color(0xFF3535D1),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 48),
+                    const SizedBox(height: 40),
 
-                  // Action buttons
-                  _ActionButton(
-                    title: 'Meetup',
-                    subtitle: 'Find people, make plans',
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                    ),
-                    shadowColor: const Color(0xFF3B82F6),
-                    icon: const Icon(Icons.groups, color: Colors.white, size: 28),
-                    onTap: () => _open(context, const MeetupScreen()),
-                  ),
-                  const SizedBox(height: 32),
-                  _ActionButton(
-                    title: 'Linkup',
-                    subtitle: 'Chill, vibe or just say hey',
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
-                    ),
-                    shadowColor: const Color(0xFF22C55E),
-                    icon: const Icon(Icons.link, color: Colors.white, size: 26),
-                    onTap: () => _open(context, const LinkupScreen()),
-                  ),
-                  const SizedBox(height: 32),
-                  _ActionButton(
-                    title: 'Pull up',
-                    subtitle: 'Throw a party!',
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFA855F7), Color(0xFF9333EA)],
-                    ),
-                    shadowColor: const Color(0xFFA855F7),
-                    icon:
-                        const Icon(Icons.arrow_upward, color: Colors.white, size: 26),
-                    onTap: () => _open(context, const PullupScreen()),
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // Bottom helper text
-                  const Center(
-                    child: Text(
-                      'Tap any button to get started',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF6B7280),
+                    // Action buttons
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 360),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _ActionButton(
+                              title: 'Meetup',
+                              subtitle: 'Find people, make plans',
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                              ),
+                              shadowColor: const Color(0xFF3B82F6),
+                              icon: const Icon(Icons.groups, color: Colors.white, size: 28),
+                              onTap: () => _open(context, const MeetupScreen()),
+                            ),
+                            const SizedBox(height: 28),
+                            _ActionButton(
+                              title: 'Linkup',
+                              subtitle: 'Chill, vibe or just say hey',
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+                              ),
+                              shadowColor: const Color(0xFF22C55E),
+                              icon: const Icon(Icons.link, color: Colors.white, size: 26),
+                              onTap: () => _open(context, const LinkupScreen()),
+                            ),
+                            const SizedBox(height: 28),
+                            _ActionButton(
+                              title: 'Pull up',
+                              subtitle: 'Throw a party!',
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFA855F7), Color(0xFF9333EA)],
+                              ),
+                              shadowColor: const Color(0xFFA855F7),
+                              icon: const Icon(Icons.arrow_upward, color: Colors.white, size: 26),
+                              onTap: () => _open(context, const PullupScreen()),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 40),
+
+                    const Center(
+                      child: Text(
+                        'Tap any button to get started',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
