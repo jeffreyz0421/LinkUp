@@ -55,5 +55,6 @@ flutter:
   assets:
     - .env
     - assets/
+    - assets/logos/
     - assets/top_us_universities_full.geojson
     - assets/default_pfp.png

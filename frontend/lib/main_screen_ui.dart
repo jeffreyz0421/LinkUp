@@ -251,7 +251,8 @@ class _MapScreenState extends MapScreenLogicState<MapScreen> {
   String communityId, {
   required mapbox.Point center,
 }) {
-  final bool mine = communityId == _myCommunityId;
+  final bool mine =
+      communityId == SessionManager.instance.primaryCommunityIdSync;
 
   return mapbox.CircleLayer(
     id                  : 'radius_$communityId',

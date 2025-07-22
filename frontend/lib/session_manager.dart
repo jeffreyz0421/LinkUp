@@ -24,22 +24,21 @@ class SessionManager {
   Future<void> update({
     required String? userId,
     required String? jwt,
-    String? primaryCommunityId,
+    String? primaryCommunity,
   }) async {
     _userId             = userId;
     _jwt                = jwt;
-    _primaryCommunityId = primaryCommunityId ?? _primaryCommunityId;
+    _primaryCommunityId = primaryCommunity;
 
     final sp = await SharedPreferences.getInstance();
     if (isGuest) {
       await sp.clear();                       // wipe everything for guests
-      return;
     }
 
     await sp.setString('user_id', userId!);
     await sp.setString('jwt', jwt!);
-    if (_primaryCommunityId != null) {
-      await sp.setString('primary_community', _primaryCommunityId!);
+    if (primaryCommunity != null) {
+      await sp.setString('primary_community', primaryCommunity!);
     }
   }
 

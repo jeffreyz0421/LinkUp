@@ -20,6 +20,7 @@ import 'package:uuid/uuid.dart';
 import 'config.dart';
 import 'models.dart';
 import 'cas.dart';
+import 'session_manager.dart';
 
 /* ────────── global constants ────────── */
 const styleUri = 'mapbox://styles/its-aymann/cmccryahv002f01s249cg9lpg';
@@ -30,6 +31,14 @@ const hlSrc = 'campus_hl_src';
 const hlLay = 'campus_hl_fill';
 const hlLine = 'campus_hl_border';
 const circleRadiusMetres = 5_000;
+/// Logged‑in user’s primary community; **null** if guest / none chosen.
+///
+/// We grab it **synchronously**, because `SessionManager.update()` already
+/// cached the value in memory during app start‑up.  
+/// (If it’s null you simply fall back to the green circles.)
+/// 
+final String? _myCommunityId =
+    SessionManager.instance.primaryCommunityIdSync; 
 
 final borderColor = ui.Color.fromARGB(255, 54, 79, 107);
 final badgeColor = const ui.Color.fromARGB(180, 76, 175, 80);
@@ -42,7 +51,7 @@ const communityLayers = {
 };
 
 final mainCampusBadge = Building(
-  id: 'campus',
+  id: 'u-mich',
   name: 'University of Michigan',
   lat: 42.2769,
   lng: -83.7412,
@@ -325,45 +334,49 @@ Future<void> showPhotoViewer(BuildContext ctx, String url) {
  *   that doesn’t create UI widgets)
  * ───────────────────────────────────────── */
 abstract class MapScreenLogicState<T extends StatefulWidget> extends State<T> {
-  mapbox.Position get camCenter   => _camCenter;
-  double          get camZoom     => _camZoom;
-  bool            get panelVisible=> _panelVisible;
-  double          get panelHeight => _panelHeight;
-  List<String>    get selectedTags=> _selectedTags;
-  String?         get selectedName   => _selectedName;
-  String?         get selectedAddress=> _selectedAddress;
-  Map<String,int> get etaMinutes  => _etaMinutes;
-  bool            get showAllEtas => _showAllEtas;
-  String          get activeMode  => _activeMode;
-  MapboxRemoteSearch get remote   => _remote;
-  geo.Position?   get lastPos     => _lastPos;
+  mapbox.Position get camCenter => _camCenter;
+  double get camZoom => _camZoom;
+  bool get panelVisible => _panelVisible;
+  double get panelHeight => _panelHeight;
+  List<String> get selectedTags => _selectedTags;
+  String? get selectedName => _selectedName;
+  String? get selectedAddress => _selectedAddress;
+  Map<String, int> get etaMinutes => _etaMinutes;
+  bool get showAllEtas => _showAllEtas;
+  String get activeMode => _activeMode;
+  MapboxRemoteSearch get remote => _remote;
+  geo.Position? get lastPos => _lastPos;
   List<String> get selectedPhotos => _selectedPhotos;
   mapbox.Position? get selectedPosition => _selectedPosition;
-  
+
   void setActiveMode(String mode) => setState(() => _activeMode = mode);
-  void setShowAllEtas(bool v)     => setState(() => _showAllEtas = v);
+  void setShowAllEtas(bool v) => setState(() => _showAllEtas = v);
   // ───── PUBLIC HOOKS THAT THE UI LAYER CAN CALL ─────
   /* ─── UI helper ─── */
-void setPanelVisible(bool value) {
-  if (_panelVisible == value) return;          // nothing to change
-  setState(() => _panelVisible = value);       // update + rebuild
-}
-void onMapCreated(mapbox.MapboxMap map)      => _onMapCreated(map);
-void onStyleLoaded()                         => _onStyleLoaded();
-void onCameraChange(mapbox.CameraChangedEventData e)
-                                             => _onCameraChange(e);
-void handleMapTap(mapbox.Point pt)           => _handleMapTap(pt);
+  void setPanelVisible(bool value) {
+    if (_panelVisible == value) return; // nothing to change
+    setState(() => _panelVisible = value); // update + rebuild
+  }
 
-Future<void> resetView()                     => _resetView();
-Future<void> goToPlace(Place p)              => _goToPlace(p);
-Future<void> flyToUser()                     => _flyToUser();
-Future<void> drawRoute(String mode,
-        {required mapbox.Position from, required mapbox.Position to})
-                                             => _drawRoute(mode, from: from, to: to);
-Future<void> fetchEta(String mode,
-        {required mapbox.Position from, required mapbox.Position to})
-                                             => _fetchEta(mode, from: from, to: to);
-Future<void> clearRoute()                    => _clearRoute();
+  void onMapCreated(mapbox.MapboxMap map) => _onMapCreated(map);
+  void onStyleLoaded() => _onStyleLoaded();
+  void onCameraChange(mapbox.CameraChangedEventData e) => _onCameraChange(e);
+  void handleMapTap(mapbox.Point pt) => _handleMapTap(pt);
+
+  Future<void> resetView() => _resetView();
+  Future<void> goToPlace(Place p) => _goToPlace(p);
+  Future<void> flyToUser() => _flyToUser();
+  Future<void> drawRoute(
+    String mode, {
+    required mapbox.Position from,
+    required mapbox.Position to,
+  }) => _drawRoute(mode, from: from, to: to);
+  Future<void> fetchEta(
+    String mode, {
+    required mapbox.Position from,
+    required mapbox.Position to,
+  }) => _fetchEta(mode, from: from, to: to);
+  Future<void> clearRoute() => _clearRoute();
 
   /*  ══════ 1.  fields  ══════ */
   mapbox.MapboxMap? _map;
@@ -431,16 +444,16 @@ Future<void> clearRoute()                    => _clearRoute();
   }
 
   void _onCameraChange(mapbox.CameraChangedEventData evt) {
-  final nz = evt.cameraState.zoom;
-  final nc = evt.cameraState.center.coordinates;
-  if (nz != _camZoom || nc != _camCenter) {
-    setState(() {
-      _camZoom   = nz;
-      _camCenter = nc;
-    });
-    _scaleUserPin();
+    final nz = evt.cameraState.zoom;
+    final nc = evt.cameraState.center.coordinates;
+    if (nz != _camZoom || nc != _camCenter) {
+      setState(() {
+        _camZoom = nz;
+        _camCenter = nc;
+      });
+      _scaleUserPin();
+    }
   }
-}
 
   /*  ══════ 4.  implementation methods  ══════ */
 

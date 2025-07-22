@@ -26,8 +26,10 @@ const double _centerFabSize = 64;
 class Community {
   final String id;
   final String name;
-  final bool  isMine;        // primary / “orange” on the map
-  Community(this.id, this.name, {this.isMine = false});
+  final bool  isMine;
+  final String logo;           // new
+  Community(this.id, this.name,
+      {this.isMine = false, required this.logo});
 }
 
 /* ═════════════════════════════════════ */
@@ -49,14 +51,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _bootstrap() async {
-    _isGuest = await SessionManager.instance.isGuest;
+    _isGuest = SessionManager.instance.isGuest;
 
     if (!_isGuest) {
       // Dummy data for now
       _communities = [
-        Community('u‑mich', 'University of Michigan', isMine: true),
-        Community('harvard', 'Harvard University'),
-        Community('stanford','Stanford University'),
+        Community('u‑mich',  'University of Michigan',
+            isMine: true,  logo: 'assets/logos/Umich_Logo.png'),
+        Community('harvard', 'Harvard University',
+            logo: 'assets/logos/Harvard_logo.png'),
+        Community('stanford','Stanford University',
+            logo: 'assets/logos/stanford_logo.png'),
       ];
     }
 
@@ -153,20 +158,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
   );
 
   Widget _communityTile(Community c) => Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12)),
-    child: Row(children: [
-      // simple coloured circle avatar
-      Container(
-        width: 56, height: 56,
-        decoration: BoxDecoration(
-          color: c.isMine ? const Color(0xFFFFE0B2)  // light‑orange
-                          : const Color(0xFFD1C4E9), // lilac-ish
-          shape: BoxShape.circle)),
-      const SizedBox(width: 16),
+  margin: const EdgeInsets.only(bottom: 12),
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12)),
+  child: Row(children: [
+    CircleAvatar(
+      radius: 28,
+      backgroundImage: AssetImage(c.logo),
+      backgroundColor:
+          c.isMine ? const Color(0xFFFFE0B2) : const Color(0xFFD1C4E9)),
+    const SizedBox(width: 16),
       Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -97,7 +97,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> _bootstrap() async {
-  _isGuest = await SessionManager.instance.isGuest;
+  _isGuest = SessionManager.instance.isGuest;
 
   // always inject the stand‑ins while backend isn’t ready
   _friends = List.of(_dummyFriends);
