@@ -5,26 +5,21 @@ class Building {
   final double lng;
   final List<Space> spaces;
 
+  String? address; // Add this
+
   Building({
     required this.id,
     required this.name,
     required this.lat,
     required this.lng,
     required this.spaces,
+    this.address,
   });
 }
+
 
 class Space {
   final String name;
 
   Space({required this.name});
 }
-
-// ✅ Move this below the class definitions, outside of any class
-final Building mainCampusBadge = Building(
-  id:   'campus',
-  name: 'University of Michigan',
-  lat:  42.2769,
-  lng:  -83.7412,
-  spaces: [],
-);
