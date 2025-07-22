@@ -1,13 +1,10 @@
-package main
+package api
 
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 	"net/mail"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -30,7 +27,6 @@ type UserInfo struct {
 }
 
 type AuthResponse struct {
-	Success     bool   `json:"success"`
 	Error       string `json:"error"`
 	UserID      string `json:"user_id"`
 	Username    string `json:"username"`
@@ -105,7 +101,7 @@ func GenerateJWT(user UserInfo) (string, error) {
 		UserID:   user.UserID,
 		Username: user.Username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
@@ -122,7 +118,7 @@ func GenerateJWT(user UserInfo) (string, error) {
 }
 
 func validateJWT(tokenString string) (*Claims, error) {
-	// Parse the token and validate the signature
+	// Parse and validate the token
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Make sure the signing method is what we expect
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -143,51 +139,9 @@ func validateJWT(tokenString string) (*Claims, error) {
 	return nil, errors.New("invalid token")
 }
 
-func main() {
-	// Set up connection to PostgreSQL database
-
-	connectionURL := os.Getenv("DATABASE_URL")
-
-	if connectionURL == "" {
-		log.Fatal("Unable to retrieve database URL")
-	}
-
-	dbConnection, err := pgxpool.New(context.Background(), connectionURL)
-
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v\n", err)
-	}
-
-	defer dbConnection.Close()
-
-	err = dbConnection.Ping(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to verify database connection: %v", err)
-	}
-
-	fmt.Println("Successfully connected to SQL Database")
-
-	// Set up the router for the HTTP requests
-	router := gin.Default()
-
-	router.Use(func(c *gin.Context) {
-		c.Set("db", dbConnection)
-		c.Next()
-	})
-
-	router.POST("/usersignup", SignupUser)
-	router.POST("/userlogin", LoginUser)
-
-	protected := router.Group("/api")
-
-	protected.Use(AuthMiddleware())
-
-	router.Run("0.0.0.0:8080")
-}
-
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get the Authorization header
+		// Get Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
@@ -202,11 +156,11 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Extract the token part (remove "Bearer " prefix)
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		// Extract the token
+		token := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Validate the token
-		claims, err := validateJWT(tokenString)
+		claims, err := validateJWT(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
@@ -217,7 +171,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 
-		// Continue to the next handler
 		c.Next()
 	}
 }
@@ -239,28 +192,17 @@ func LoginUser(c *gin.Context) {
 	var user UserInfo
 	err := c.ShouldBindJSON(&user)
 
-	failed := AuthResponse{
-		Username:    "",
-		Success:     false,
-		UserID:      "",
-		AccessToken: "",
-		Error:       "",
-	}
-
 	if err != nil {
-		failed.Error = "unable to retrieve user input"
-		c.IndentedJSON(http.StatusInternalServerError, failed)
+		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return
 	}
 
 	var query string
 
-	validInp, err := ValidateUserInput(&user)
+	_, err = ValidateUserInput(&user)
 
-	if !validInp {
-		failed.Error = err.Error()
-		c.IndentedJSON(http.StatusBadRequest, failed)
-		return
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, nil)
 	}
 
 	var id string
@@ -285,32 +227,28 @@ func LoginUser(c *gin.Context) {
 	}
 
 	success := AuthResponse{
-		Success: true,
-		Error:   "",
+		Error: "",
 	}
 
 	err = db.QueryRow(ctx, query, id).Scan(&success.UserID, &success.Username, &passwordHash)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			failed.Error = "user not found"
-			c.IndentedJSON(http.StatusNotFound, failed)
+			c.IndentedJSON(http.StatusNotFound, nil)
 			return
 		}
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(user.Password))
 	if err != nil {
-		failed.Error = "wrong password"
-		c.IndentedJSON(http.StatusUnauthorized, failed)
+		c.IndentedJSON(http.StatusUnauthorized, nil)
 		return
 	}
 
 	success.AccessToken, err = GenerateJWT(user)
 
 	if err != nil {
-		failed.Error = "failed to generate login token"
-		c.IndentedJSON(http.StatusInternalServerError, failed)
+		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -326,33 +264,21 @@ func SignupUser(c *gin.Context) {
 	var user UserInfo
 	err := c.ShouldBindJSON(&user)
 
-	failed := AuthResponse{
-		Username:    "",
-		Success:     false,
-		UserID:      "",
-		AccessToken: "",
-		Error:       "",
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, nil)
+		return
 	}
+
+	_, err = ValidateUserInput(&user)
 
 	if err != nil {
-		failed.Error = "unable to retrieve user input"
-		c.IndentedJSON(http.StatusInternalServerError, failed)
-		return
-	}
-
-	validInp, err := ValidateUserInput(&user)
-
-	if !validInp {
-		failed.Error = err.Error()
-		c.IndentedJSON(http.StatusBadRequest, failed)
-		return
+		c.IndentedJSON(http.StatusBadRequest, nil)
 	}
 
 	passwordHash, err := HashPassword(user.Password)
 
 	if err != nil {
-		failed.Error = "password hashing failed"
-		c.IndentedJSON(http.StatusInternalServerError, failed)
+		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -363,14 +289,13 @@ func SignupUser(c *gin.Context) {
 	err = db.QueryRow(ctx, query, user.Username, user.PhoneNumber, user.Email).Scan()
 
 	if err != nil && err == pgx.ErrNoRows {
-		failed.Error = "username, phone number, or email already exists"
-		c.IndentedJSON(http.StatusConflict, failed)
+		c.IndentedJSON(http.StatusConflict, nil)
 		return
 	}
 
 	query = `
 		INSERT INTO users (username, email, password_hash, name, phone_number)
-		VALUES ($1, $2, $3, $4, $5) RETURNING userid;
+		VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
 	`
 
 	var userID string
@@ -378,22 +303,18 @@ func SignupUser(c *gin.Context) {
 	err = db.QueryRow(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber).Scan(userID)
 
 	if err != nil {
-		failed.Error = "unable to signup user"
-		c.IndentedJSON(http.StatusInternalServerError, failed)
+		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return
 	}
 
 	success := AuthResponse{
 		Username: user.Username,
-		Success:  true,
 	}
 	success.AccessToken, err = GenerateJWT(user)
 	success.UserID = userID
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err.Error())
-		failed.Error = "failed to generate access token"
-		c.IndentedJSON(http.StatusInternalServerError, failed)
+		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return
 	}
 
