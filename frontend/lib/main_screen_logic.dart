@@ -361,7 +361,8 @@ abstract class MapScreenLogicState<T extends StatefulWidget> extends State<T> {
   void onMapCreated(mapbox.MapboxMap map) => _onMapCreated(map);
   void onStyleLoaded() => _onStyleLoaded();
   void onCameraChange(mapbox.CameraChangedEventData e) => _onCameraChange(e);
-  void handleMapTap(mapbox.Point pt) => _handleMapTap(pt);
+  Future<void> handleMapTap(mapbox.Point pt) => _handleMapTap(pt);
+  mapbox.MapboxMap get mapController => _map!;
 
   Future<void> resetView() => _resetView();
   Future<void> goToPlace(Place p) => _goToPlace(p);
@@ -1108,5 +1109,254 @@ abstract class MapScreenLogicState<T extends StatefulWidget> extends State<T> {
   void dispose() {
     _annMgr?.deleteAll();
     super.dispose();
+  }
+  /// Public detail‐panel builder (copied from main_screen_ui.dart).
+  Widget buildDetailCard(BuildContext ctx) {
+    if (selectedName == null) return const SizedBox.shrink();
+    return Material(
+      elevation: 12,
+      color: const Color(0xFFF7F2FD),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            12 + MediaQuery.of(ctx).viewPadding.bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // tag list stretches, can wrap onto new lines:
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: selectedTags.map(_tagChip).toList(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 24,
+                          color: Colors.deepPurple,
+                        ),
+                        tooltip: 'Close',
+                        onPressed: () async {
+                          await clearRoute();
+                          setPanelVisible(false);
+                        },
+                      ),
+                    ],
+                  ),
+
+                  /* name */
+                  Text(
+                    selectedName!,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  /* address */
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          (selectedAddress?.isNotEmpty ?? false)
+                              ? selectedAddress!
+                              : 'Address unavailable',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  /* photo strip */
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 92,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: selectedPhotos.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (_, i) {
+                        final url = selectedPhotos[i];
+                        return GestureDetector(
+                          onTap: () => showPhotoViewer(ctx, url),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Hero(
+                              tag: url,
+                              child: Image.network(
+                                url,
+                                width: 140,
+                                height: 92,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (_, img, p) => p == null
+                                    ? img
+                                    : const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 140,
+                                  height: 92,
+                                  color: Colors.grey.shade200,
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  /* ETA / mode buttons */
+                  if (etaMinutes['drive'] != null && !showAllEtas)
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          if (lastPos == null || selectedPosition == null)
+                            return;
+                          await drawRoute(
+                            'drive',
+                            from: mapbox.Position(
+                              lastPos!.longitude,
+                              lastPos!.latitude,
+                            ),
+                            to: selectedPosition!,
+                          );
+                          setActiveMode('drive');
+                          setShowAllEtas(true);
+
+                          // fire off bike / walk in background
+                          fetchEta(
+                            'bike',
+                            from: mapbox.Position(
+                              lastPos!.longitude,
+                              lastPos!.latitude,
+                            ),
+                            to: selectedPosition!,
+                          );
+                          fetchEta(
+                            'walk',
+                            from: mapbox.Position(
+                              lastPos!.longitude,
+                              lastPos!.latitude,
+                            ),
+                            to: selectedPosition!,
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.directions_car_filled_rounded,
+                          size: 20,
+                        ),
+                        label: Text('${etaMinutes['drive']} min'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (showAllEtas)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _modeChip('drive', Icons.directions_car_filled_rounded),
+                        _modeChip('bike', Icons.directions_bike_rounded),
+                        _modeChip('walk', Icons.directions_walk_rounded),
+                      ],
+                    )
+                  else
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  Widget _tagChip(String lbl) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    decoration: BoxDecoration(
+      color: Colors.deepPurple,
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      lbl,
+      style: const TextStyle(
+        fontSize: 12,
+        letterSpacing: .4,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
+    ),
+  );
+  Widget _modeChip(String mode, IconData icon) {
+    final mins = etaMinutes[mode];
+    final selected = activeMode == mode;
+
+    return ActionChip(
+      avatar: Icon(
+        icon,
+        size: 18,
+        color: selected ? Colors.white : Colors.deepPurple,
+      ),
+      label: Text(
+        mins != null ? '$mins min' : '…',
+        style: TextStyle(color: selected ? Colors.white : Colors.deepPurple),
+      ),
+      backgroundColor: selected ? Colors.deepPurple : Colors.deepPurple.shade50,
+      onPressed: mins == null
+          ? null
+          : () async {
+              setActiveMode(mode);
+              if (lastPos == null) return;
+              await drawRoute(
+                mode,
+                from: mapbox.Position(lastPos!.longitude, lastPos!.latitude),
+                to: camCenter, // current camera centre
+              );
+            },
+    );
   }
 }

@@ -1,18 +1,17 @@
-import 'package:flutter/material.dart';
-import 'meetup.dart';
-import 'pullup.dart';
-import 'linkup.dart';
-import 'main_screen_ui.dart';
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'dart:ui';
+// lib/cas.dart
 
-// Screens your logic already uses. Make sure these paths are still correct.
+import 'dart:ui';
+import 'package:flutter/material.dart';
+
+import 'main_screen_ui.dart';   // for MapScreen
+import 'meetup.dart';          // MeetupFlow
+import 'linkup.dart';
+import 'pullup.dart';
 
 /// Combined version of CAS.dart that keeps your original navigation / business
 /// logic while adopting your friend’s polished UI design.
 ///
-/// • Buttons navigate to their respective pages (Meetup, Linkup, Pull‑up).
+/// • Buttons navigate to their respective pages (MeetupFlow, LinkupScreen, PullupScreen).
 /// • Back arrow returns to the map (or pops if you push this screen).
 /// • All custom painters from the design are preserved.
 
@@ -126,8 +125,12 @@ class CASScreen extends StatelessWidget {
                                 colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
                               ),
                               shadowColor: const Color(0xFF3B82F6),
-                              icon: const Icon(Icons.groups, color: Colors.white, size: 28),
-                              onTap: () => _open(context, const MeetupScreen()),
+                              icon: const Icon(
+                                Icons.groups,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                              onTap: () => _open(context, const MeetupFlow()),
                             ),
                             const SizedBox(height: 28),
                             _ActionButton(
@@ -137,7 +140,11 @@ class CASScreen extends StatelessWidget {
                                 colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
                               ),
                               shadowColor: const Color(0xFF22C55E),
-                              icon: const Icon(Icons.link, color: Colors.white, size: 26),
+                              icon: const Icon(
+                                Icons.link,
+                                color: Colors.white,
+                                size: 26,
+                              ),
                               onTap: () => _open(context, const LinkupScreen()),
                             ),
                             const SizedBox(height: 28),
@@ -148,7 +155,11 @@ class CASScreen extends StatelessWidget {
                                 colors: [Color(0xFFA855F7), Color(0xFF9333EA)],
                               ),
                               shadowColor: const Color(0xFFA855F7),
-                              icon: const Icon(Icons.arrow_upward, color: Colors.white, size: 26),
+                              icon: const Icon(
+                                Icons.arrow_upward,
+                                color: Colors.white,
+                                size: 26,
+                              ),
                               onTap: () => _open(context, const PullupScreen()),
                             ),
                           ],

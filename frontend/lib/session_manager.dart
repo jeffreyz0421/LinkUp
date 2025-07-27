@@ -6,9 +6,27 @@ class SessionManager {
   static final SessionManager instance = SessionManager._();
 
   /* ---------- in‑memory state ---------- */
-  String? _userId;                 // null / guest
+  String? _userId; // null / guest
   String? _jwt;
-  String? _primaryCommunityId;     // null until a community is chosen
+  String? _primaryCommunityId; // null until a community is chosen
+  String? _token;
+  String? _username;
+  String? get authToken => _token;
+
+  Future<void> saveAuth(String token, String userId, String username) async {
+    _token = token;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('jwt', token);
+    await prefs.setString('user_id', userId);
+    await prefs.setString('username', username);
+  }
+
+  Future<void> loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('jwt');
+    _userId = prefs.getString('user_id');
+    _username = prefs.getString('username');
+  }
 
   /* ---------- convenience ---------- */
   bool get isGuest => _userId == null || _userId!.isEmpty;
@@ -21,18 +39,20 @@ class SessionManager {
   /// Pass `primaryCommunityId` *only* when it changes (e.g. user just joined
   /// or switched). Leave it `null` to keep the previous value.
   ///
+  ///
+
   Future<void> update({
     required String? userId,
     required String? jwt,
     String? primaryCommunity,
   }) async {
-    _userId             = userId;
-    _jwt                = jwt;
+    _userId = userId;
+    _jwt = jwt;
     _primaryCommunityId = primaryCommunity;
 
     final sp = await SharedPreferences.getInstance();
     if (isGuest) {
-      await sp.clear();                       // wipe everything for guests
+      await sp.clear(); // wipe everything for guests
     }
 
     await sp.setString('user_id', userId!);
