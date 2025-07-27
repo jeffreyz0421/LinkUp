@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gin-gonic/gin"
@@ -19,19 +20,18 @@ import (
 )
 
 type UserInfo struct {
-	Username    string `json:"username"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	Name        string `json:"name"`
-	PhoneNumber string `json:"phone_number"`
-	UserID      string `json:"user_id"`
+	Username    string    `json:"username"`
+	Email       string    `json:"email"`
+	Password    string    `json:"password"`
+	Name        string    `json:"name"`
+	PhoneNumber string    `json:"phone_number"`
+	UserID      uuid.UUID `json:"user_id"`
 }
 
 type AuthResponse struct {
-	Error       string `json:"error"`
-	UserID      string `json:"user_id"`
-	Username    string `json:"username"`
-	AccessToken string `json:"access_token"`
+	UserID      uuid.UUID `json:"user_id"`
+	Username    string    `json:"username"`
+	AccessToken string    `json:"access_token"`
 }
 
 type JWTSecret struct {
@@ -99,16 +99,16 @@ func ValidateUserInput(userInfo *UserInfo) (bool, error) {
 
 func GenerateJWT(user UserInfo) (string, error) {
 	claims := &Claims{
-		UserID:   user.UserID,
+		UserID:   user.UserID.String(),
 		Username: user.Username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(365 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	}
 
-	// Create the token with claims and sign it with our secret
+	// Create the token with claims and sign it
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(getJWTSecret()))
 	if err != nil {
@@ -119,9 +119,7 @@ func GenerateJWT(user UserInfo) (string, error) {
 }
 
 func validateJWT(tokenString string) (*Claims, error) {
-	// Parse and validate the token
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// Make sure the signing method is what we expect
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
@@ -132,7 +130,6 @@ func validateJWT(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	// Extract claims if token is valid
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
@@ -142,25 +139,21 @@ func validateJWT(tokenString string) (*Claims, error) {
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
-			c.Abort() // Stop processing this request
+			c.Abort()
 			return
 		}
 
-		// Check if it starts with "Bearer "
 		if !strings.HasPrefix(authHeader, "Bearer ") {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format"})
 			c.Abort()
 			return
 		}
 
-		// Extract the token
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// Validate the token
 		claims, err := validateJWT(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
@@ -168,8 +161,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Store user info in context for use in handlers
-		fmt.Println("USERID ASSIGNED: " + claims.UserID)
+		// Store user info in context
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 
@@ -185,96 +177,13 @@ func HashPassword(password string) (string, error) {
 	return string(hash), nil
 }
 
-// func LoginUser(c *gin.Context) {
-// 	db := c.MustGet("db").(*pgxpool.Pool)
-
-// 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-// 	defer cancel()
-
-// 	var user UserInfo
-// 	err := c.ShouldBindJSON(&user)
-
-// 	if err != nil {
-// 		c.IndentedJSON(http.StatusInternalServerError, nil)
-// 		return
-// 	}
-
-// 	var query string
-
-// 	_, err = ValidateUserInput(&user)
-
-// 	if err != nil {
-// 		c.IndentedJSON(http.StatusBadRequest, nil)
-// 		return
-// 	}
-
-// 	var id string
-
-// 	var passwordHash string
-
-// 	fmt.Println("Test: ")
-// 	fmt.Println(user)
-// 	if user.Username != "" {
-// 		id = user.Username
-// 		query = `
-// 			SELECT userid, username, password_hash FROM users WHERE username = $1;
-// 		`
-// 	} else if user.Email != "" {
-// 		id = user.Email
-// 		query = `
-// 			SELECT userid, username, password_hash FROM users WHERE email = $1;
-// 		`
-// 	} else {
-// 		id = user.PhoneNumber
-// 		query = `
-// 			SELECT userid, username, password_hash FROM users WHERE phone_number = $1;
-// 		`
-// 	}
-
-// 	success := AuthResponse{
-// 		Error: "",
-// 	}
-
-// 	err = db.QueryRow(ctx, query, id).Scan(&success.UserID, &success.Username, &passwordHash)
-
-// 	if err != nil {
-// 		if err == pgx.ErrNoRows {
-// 			c.IndentedJSON(http.StatusNotFound, nil)
-// 			return
-// 		}
-// 	}
-
-// 	fmt.Println("Stored in DB: " + passwordHash)
-
-// 	// newPasswordHash, err := HashPassword(user.Password)
-
-// 	fmt.Println(success)
-
-// 	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(user.Password))
-// 	if err != nil {
-// 		fmt.Println("Wrong Password!")
-// 		c.IndentedJSON(http.StatusUnauthorized, nil)
-// 		return
-// 	}
-
-// 	success.AccessToken, err = GenerateJWT(user)
-
-// 	if err != nil {
-// 		c.IndentedJSON(http.StatusInternalServerError, nil)
-// 		return
-// 	}
-
-// 	c.IndentedJSON(http.StatusAccepted, success)
-// }
-
 func LoginUser(c *gin.Context) {
-	db := c.MustGet("db").(*pgxpool.Pool)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-
 	var user UserInfo
 	err := c.ShouldBindJSON(&user)
+
+	db := c.MustGet("db").(*pgxpool.Pool)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, nil)
@@ -310,34 +219,12 @@ func LoginUser(c *gin.Context) {
 		`
 	}
 
-	// Debug: Print exact query and parameter
-	// fmt.Printf("Executing query: %s\n", query)
-	// fmt.Printf("With parameter: '%s'\n", id)
-
-	success := AuthResponse{
-		Error: "",
-	}
+	var success AuthResponse
 
 	err = db.QueryRow(ctx, query, id).Scan(&success.UserID, &success.Username, &passwordHash)
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			// fmt.Printf("No rows found for search value: '%s'\n", id)
-
-			// Debug query: Let's see what's actually in the database
-			// debugQuery := "SELECT username, email, phone_number FROM users LIMIT 5;"
-			// rows, debugErr := db.Query(ctx, debugQuery)
-			// if debugErr == nil {
-			// 	fmt.Println("Sample data from database:")
-			// 	defer rows.Close()
-			// 	for rows.Next() {
-			// 		var dbUsername, dbEmail, dbPhone sql.NullString
-			// 		rows.Scan(&dbUsername, &dbEmail, &dbPhone)
-			// 		fmt.Printf("  Username: '%s', Email: '%s', Phone: '%s'\n",
-			// 			dbUsername.String, dbEmail.String, dbPhone.String)
-			// 	}
-			// }
-
 			c.IndentedJSON(http.StatusNotFound, nil)
 			return
 		}
@@ -357,7 +244,6 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 
-	// Generate JWT token
 	success.AccessToken, err = GenerateJWT(user)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, nil)
@@ -410,9 +296,9 @@ func SignupUser(c *gin.Context) {
 		VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
 	`
 
-	var userID string
+	var userID uuid.UUID
 
-	err = db.QueryRow(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber).Scan(userID)
+	err = db.QueryRow(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber).Scan(&userID)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err.Error())

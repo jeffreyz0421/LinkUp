@@ -6,14 +6,19 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserProfile struct {
-	Bio       string    `json:"bio"`
-	Hobbies   []string  `json:"hobbies"`
-	Birthdate time.Time `json:"birthdate"`
+	Bio                    string      `json:"bio"`
+	Hobbies                []string    `json:"hobbies"`
+	Birthdate              time.Time   `json:"birthdate"`
+	LastActiveTime         time.Time   `json:"last_active"`
+	LastActiveLocation     Coordinates `json:"last_active_location"`
+	NumOfFunctionsAttended int         `json:"functions_attended"`
+	Rating                 int         `json:"rating"`
 }
 
 func UpdateProfile(c *gin.Context) {
@@ -27,7 +32,7 @@ func UpdateProfile(c *gin.Context) {
 
 	var userProfile UserProfile
 
-	err = c.ShouldBindJSON(&userProfile)
+	err = c.MustBindWith(&userProfile, binding.JSON)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, nil)
@@ -67,10 +72,21 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	query := `
-		SELECT * FROM user_profiles WHERE user_id = $1;
+		SELECT bio, birthdate, hobbies, last_active, last_active_location, functions_attended, rating FROM user_profiles WHERE user_id = $1;
 	`
 
 	db := c.MustGet("db").(*pgxpool.Pool)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
+
+	var userProfile UserProfile
+
+	err = db.QueryRow(ctx, query, userID).Scan(&userProfile.Bio, &userProfile.Birthdate, &userProfile.Hobbies, &userProfile.LastActiveTime, &userProfile.LastActiveLocation, &userProfile.NumOfFunctionsAttended, &userProfile.Rating)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, nil)
+		return
+	}
+
+	c.IndentedJSON(http.StatusFound, userProfile)
 }

@@ -42,7 +42,7 @@ func GetPlaceDetails(c *gin.Context) {
 	}
 
 	req.Header.Add("X-Goog-Api-Key", GoogleAPIKey)
-	req.Header.Add("X-Goog-FieldMask", "displayName,rating,userRatingCount,shortFormattedAddress,photos")
+	req.Header.Add("X-Goog-FieldMask", "displayName,rating,userRatingCount,shortFormattedAddress")
 
 	// TODO -- Return list of images (URLS) of the place
 
@@ -161,7 +161,7 @@ func GetPlaceID(placeName string, coordinates Center) string {
 		LocationBias: LocationBias{
 			Circle: Circle{
 				Center: coordinates,
-				Radius: 50,
+				Radius: 200,
 			},
 		},
 		TextQuery: placeName,
@@ -170,7 +170,7 @@ func GetPlaceID(placeName string, coordinates Center) string {
 	body, err := json.Marshal(bodyData)
 
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
+		fmt.Println("GetPlaceID Error Binding data to request body: " + err.Error())
 	}
 
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(body))
@@ -181,7 +181,8 @@ func GetPlaceID(placeName string, coordinates Center) string {
 
 	req.Header.Add("X-Goog-Api-Key", GoogleAPIKey)
 	req.Header.Add("X-Goog-FieldMask", "places.id")
-	req.Header.Add("textQuery", placeName)
+	req.Header.Add("Content-Type", "application/json")
+	// req.Header.Add("textQuery", placeName)
 
 	resp, err := http.DefaultClient.Do(req)
 

@@ -32,8 +32,6 @@ type FunctionData struct {
 
 func CreateMeetup(c *gin.Context) {
 	var userID uuid.UUID
-	var newMeetup FunctionData
-
 	userIDString := c.MustGet("user_id").(string)
 	userID, err := uuid.Parse(userIDString)
 
@@ -43,13 +41,17 @@ func CreateMeetup(c *gin.Context) {
 		return
 	}
 
+	var newMeetup FunctionData
+
 	err = c.MustBindWith(&newMeetup, binding.JSON)
 
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
+		fmt.Println("Create Meetup Binding Error: " + err.Error())
 	}
 
 	newMeetup.Host = userID
+
+	fmt.Println(newMeetup.LocationName)
 
 	placeID := GetPlaceID(newMeetup.LocationName, newMeetup.LocationCoordinates)
 
@@ -66,7 +68,7 @@ func CreateMeetup(c *gin.Context) {
 	err = db.QueryRow(ctx, query, newMeetup.Host, placeID, newMeetup.Name, newMeetup.StartTime, newMeetup.Vibe, "meetup").Scan(&functionID)
 
 	if err != nil {
-		fmt.Println("Error: " + err.Error())
+		fmt.Println("Create Meetup Query Execution Error: " + err.Error())
 	}
 
 	type Response struct {
@@ -87,7 +89,16 @@ type FunctionDataList struct {
 }
 
 func GetUserMeetups(c *gin.Context) {
-	userID := c.MustGet("user_id").(string)
+	var userID uuid.UUID
+	userIDString := c.MustGet("user_id").(string)
+	userID, err := uuid.Parse(userIDString)
+
+	if err != nil {
+		fmt.Println("Invalid user_id returned :( " + userIDString)
+		c.IndentedJSON(http.StatusBadRequest, nil)
+		return
+	}
+
 	db := c.MustGet("db").(*pgxpool.Pool)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
@@ -131,5 +142,5 @@ func GetUserMeetups(c *gin.Context) {
 		meetups.Functions = append(meetups.Functions, meetup)
 	}
 
-	c.IndentedJSON(http.StatusFound, meetups)
+	c.IndentedJSON(http.StatusOK, meetups)
 }

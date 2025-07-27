@@ -13,19 +13,6 @@ import (
 )
 
 func main() {
-
-	// Test Coordinates for the Domino's across the street
-	// testCoords := api.Coordinates{
-	// 	Latitude:  42.270401963473326,
-	// 	Longitude: -83.74030060729785,
-	// }
-	// fmt.Println("Place ID:" + api.GetPlaceID("Domino's", testCoords))
-
-	// api.TestFeatureRetrieval()
-
-	// Set up connection to PostgreSQL database
-	// connectionURL := os.Getenv("DATABASE_URL")
-
 	connectionURL := "postgres://app:AnnArbor914@localhost:5432/linkup_data"
 
 	if connectionURL == "" {
@@ -55,6 +42,7 @@ func main() {
 		c.Next()
 	})
 
+	// Group endpoints with corresponding middleware
 	publicRoutes := router.Group("/api")
 	{
 		userRoutes := publicRoutes.Group("/user")
@@ -72,19 +60,12 @@ func main() {
 			meetupRoutes.POST("", api.CreateMeetup)
 			meetupRoutes.GET("", api.GetUserMeetups)
 		}
+		userRoutes := protectedRoutes.Group("/users")
+		{
+			userRoutes.GET("", api.GetUserProfile)
+			userRoutes.PUT("", api.UpdateProfile)
+		}
 	}
-
-	// router.POsT("/api/")
-
-	// router.POST("/user/signup", auth.SignupUser)
-	// router.POST("/user/login", auth.LoginUser)
-	// router.POST("/api/meetups", api.CreateMeetup)
-	// router.GET("/api/meetups", api.GetUserMeetups)
-	// router.POST("/user/profile")
-
-	protected := router.Group("/api/*")
-
-	protected.Use(auth.AuthMiddleware())
 
 	router.Run("0.0.0.0:8080")
 }
