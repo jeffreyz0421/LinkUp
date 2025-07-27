@@ -270,7 +270,8 @@ class _MapScreenState extends MapScreenLogicState<MapScreen> {
   );
 }
   /* ═════════════════ detail panel & helpers ═════════════════ */
-
+  /// public alias so other files can call it
+  Widget buildDetailCard(BuildContext ctx) => _buildDetailCard(ctx);
   /// Sliding panel that appears after a tap / search.
   /// Pure UI – all data comes from the mix‑in getters.
   Widget _buildDetailCard(BuildContext ctx) {

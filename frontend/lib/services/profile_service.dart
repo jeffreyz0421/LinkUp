@@ -28,18 +28,17 @@ class ProfileService {
   /// GET the user’s hobbies.
   /// Returns an empty list if server responds 204 No Content.
   Future<List<String>> getHobbies(String userId) async {
-    final token  = await SessionManager.instance.jwt;
-    final uri    = Uri.parse('$_base/api/profile/$userId/hobbies');
+    final token = await SessionManager.instance.jwt;
+    final uri = Uri.parse('$_base/api/profile/$userId/hobbies');
 
-    final resp = await _client
-    .get(
+    final resp = await _client.get(
       uri,
       headers: {
         'Authorization': 'Bearer $token',
-        'Content-Type' : 'application/json',
-      })
-    .timeout(const Duration(milliseconds: 500));
-
+        'Content-Type': 'application/json',
+      },
+    )
+    .timeout(const Duration(milliseconds: 200));
 
     if (resp.statusCode == 200) {
       final decoded = jsonDecode(resp.body) as List<dynamic>;
@@ -48,30 +47,30 @@ class ProfileService {
     if (resp.statusCode == 204) return <String>[];
 
     throw Exception(
-      'getHobbies failed – HTTP ${resp.statusCode}: ${resp.body}');
+      'getHobbies failed – HTTP ${resp.statusCode}: ${resp.body}',
+    );
   }
 
   /// Replace the entire hobby list on the server.
   /// Expects a JSON array of strings.
   Future<void> setHobbies(String userId, List<String> hobbies) async {
     final token = await SessionManager.instance.jwt;
-    final uri   = Uri.parse('$_base/api/profile/$userId/hobbies');
+    final uri = Uri.parse('$_base/api/profile/$userId/hobbies');
 
-    final resp = await _client
-    .post(
+    final resp = await _client.post(
       uri,
       headers: {
         'Authorization': 'Bearer $token',
-        'Content-Type' : 'application/json',
+        'Content-Type': 'application/json',
       },
       body: jsonEncode(hobbies),
     )
-    .timeout(const Duration(milliseconds: 500));
-
+    .timeout(const Duration(milliseconds: 200));
 
     if (resp.statusCode == 200 || resp.statusCode == 204) return;
 
     throw Exception(
-      'setHobbies failed – HTTP ${resp.statusCode}: ${resp.body}');
+      'setHobbies failed – HTTP ${resp.statusCode}: ${resp.body}',
+    );
   }
 }
