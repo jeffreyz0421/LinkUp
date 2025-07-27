@@ -8,27 +8,42 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+
+	uuid "github.com/google/uuid"
+	// uuid "github.com/jackc/pgx/pgtype/ext/gofrs-uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type FunctionData struct {
 	Name                string      `json:"name"`
-	Host                string      `json:"host"`
-	SecondHost          string      `json:"host1"`
+	Host                uuid.UUID   `json:"host"`
+	SecondHost          uuid.UUID   `json:"host1"`
 	Vibe                string      `json:"vibe"`
 	FunctionType        string      `json:"function_type"`
 	LocationName        string      `json:"location_name"`
 	LocationCoordinates Coordinates `json:"location_coordinates"`
 	StartTime           time.Time   `json:"start_time"`
 	EndTime             time.Time   `json:"end_time"`
+	InviteStatus        string      `json:"invite_status"`
+	PlaceID             string      `json:"place_id"`
+	InvitedUsers        []string    `json:"invited_users"`
+	FunctionID          uuid.UUID   `json:"function_id"`
 }
 
 func CreateMeetup(c *gin.Context) {
-	var userID string
+	var userID uuid.UUID
 	var newMeetup FunctionData
 
-	userID = c.MustGet("user_id").(string)
-	err := c.MustBindWith(&newMeetup, binding.JSON)
+	userIDString := c.MustGet("user_id").(string)
+	userID, err := uuid.Parse(userIDString)
+
+	if err != nil {
+		fmt.Println("Invalid user_id returned :( " + userIDString)
+		c.IndentedJSON(http.StatusBadRequest, nil)
+		return
+	}
+
+	err = c.MustBindWith(&newMeetup, binding.JSON)
 
 	if err != nil {
 		fmt.Println("Error: " + err.Error())
@@ -39,7 +54,7 @@ func CreateMeetup(c *gin.Context) {
 	placeID := GetPlaceID(newMeetup.LocationName, newMeetup.LocationCoordinates)
 
 	query := `
-		INSERT INTO functions (host, function_type, place_id, function_name, starts_at, vibe) VALUES ($1, "meetup", $2, $3, $4, $5) RETURNING function_id;
+		INSERT INTO functions (host, function_type, place_id, function_name, starts_at, vibe) VALUES ($1, $6, $2, $3, $4, $5) RETURNING function_id;
 	`
 
 	db := c.MustGet("db").(*pgxpool.Pool)
@@ -48,7 +63,7 @@ func CreateMeetup(c *gin.Context) {
 	defer cancel()
 
 	var functionID string
-	err = db.QueryRow(ctx, query, newMeetup.Host, placeID, newMeetup.Name, newMeetup.StartTime, newMeetup.Vibe).Scan(&functionID)
+	err = db.QueryRow(ctx, query, newMeetup.Host, placeID, newMeetup.Name, newMeetup.StartTime, newMeetup.Vibe, "meetup").Scan(&functionID)
 
 	if err != nil {
 		fmt.Println("Error: " + err.Error())
@@ -62,11 +77,59 @@ func CreateMeetup(c *gin.Context) {
 		FunctionID: functionID,
 	}
 
+	// TODO -- Invite all the users selected by the host
+
 	c.IndentedJSON(http.StatusCreated, response)
 }
 
-func GetFunction(c *gin.Context) {
+type FunctionDataList struct {
+	Functions []FunctionData `json:"functions"`
 }
 
-func GetAllFunctions(c *gin.Context) {
+func GetUserMeetups(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+	db := c.MustGet("db").(*pgxpool.Pool)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT DISTINCT f.*
+		FROM functions f
+		WHERE f.function_type = 'meetup'
+		AND (
+			f.host = $1
+			
+			OR 
+			
+			EXISTS (
+			SELECT 1 
+			FROM function_attendees fa 
+			WHERE fa.function_id = f.function_id
+				AND fa.user_id = $1
+			)
+		);
+	`
+
+	rows, err := db.Query(ctx, query, userID)
+
+	if err != nil {
+		fmt.Println("Error getting meetups :(")
+	}
+
+	meetups := FunctionDataList{
+		Functions: []FunctionData{},
+	}
+
+	var meetup FunctionData
+
+	for rows.Next() {
+		meetup = FunctionData{
+			FunctionType: "meetup",
+		}
+		rows.Scan(&meetup.FunctionID, &meetup.Host, nil, nil, &meetup.PlaceID, &meetup.Name, &meetup.StartTime, &meetup.EndTime, &meetup.Vibe)
+		meetups.Functions = append(meetups.Functions, meetup)
+	}
+
+	c.IndentedJSON(http.StatusFound, meetups)
 }

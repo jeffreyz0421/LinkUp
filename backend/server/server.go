@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
+	"server/api"
 	auth "server/api/userauth"
 
 	"github.com/gin-gonic/gin"
@@ -19,10 +19,14 @@ func main() {
 	// 	Latitude:  42.270401963473326,
 	// 	Longitude: -83.74030060729785,
 	// }
-	// fmt.Println(api.GetPlaceID("Domino's", testCoords))
+	// fmt.Println("Place ID:" + api.GetPlaceID("Domino's", testCoords))
+
+	// api.TestFeatureRetrieval()
 
 	// Set up connection to PostgreSQL database
-	connectionURL := os.Getenv("DATABASE_URL")
+	// connectionURL := os.Getenv("DATABASE_URL")
+
+	connectionURL := "postgres://app:AnnArbor914@localhost:5432/linkup_data"
 
 	if connectionURL == "" {
 		log.Fatal("Unable to retrieve database URL")
@@ -51,13 +55,34 @@ func main() {
 		c.Next()
 	})
 
+	publicRoutes := router.Group("/api")
+	{
+		userRoutes := publicRoutes.Group("/user")
+		{
+			userRoutes.POST("/signup", auth.SignupUser)
+			userRoutes.POST("/login", auth.LoginUser)
+		}
+	}
+
+	protectedRoutes := router.Group("/api")
+	protectedRoutes.Use(auth.AuthMiddleware())
+	{
+		meetupRoutes := protectedRoutes.Group("/meetups")
+		{
+			meetupRoutes.POST("", api.CreateMeetup)
+			meetupRoutes.GET("", api.GetUserMeetups)
+		}
+	}
+
 	// router.POsT("/api/")
 
-	router.POST("/user/signup", auth.SignupUser)
-	router.POST("/user/login", auth.LoginUser)
+	// router.POST("/user/signup", auth.SignupUser)
+	// router.POST("/user/login", auth.LoginUser)
+	// router.POST("/api/meetups", api.CreateMeetup)
+	// router.GET("/api/meetups", api.GetUserMeetups)
 	// router.POST("/user/profile")
 
-	protected := router.Group("/api")
+	protected := router.Group("/api/*")
 
 	protected.Use(auth.AuthMiddleware())
 

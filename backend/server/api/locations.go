@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 
 	"github.com/gin-gonic/gin"
+	// "github.com/google/uuid"
 )
 
 const (
@@ -20,7 +21,7 @@ type PlaceDetails struct {
 	DisplayName           string
 	ShortFormattedAddress string
 	Rating                float32
-	UesrRatingCount       int
+	UserRatingCount       int
 }
 
 func GetPlaceDetails(c *gin.Context) {
@@ -41,7 +42,7 @@ func GetPlaceDetails(c *gin.Context) {
 	}
 
 	req.Header.Add("X-Goog-Api-Key", GoogleAPIKey)
-	req.Header.Add("X-Goog-FieldMask", "displayName,rating,userRotingCount,shortFormattedAddress")
+	req.Header.Add("X-Goog-FieldMask", "displayName,rating,userRatingCount,shortFormattedAddress,photos")
 
 	// TODO -- Return list of images (URLS) of the place
 
@@ -71,6 +72,55 @@ func GetPlaceDetails(c *gin.Context) {
 	json.Unmarshal(body, &placeDetails)
 
 	c.IndentedJSON(http.StatusOK, placeDetails)
+}
+
+func TestFeatureRetrieval() {
+	apiURL := "https://places.googleapis.com/v1/places/"
+
+	placeID := "ChIJtUuxMUiuPIgROs6lhMIGkLE"
+
+	apiURL += placeID
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
+	}
+
+	req.Header.Add("X-Goog-Api-Key", GoogleAPIKey)
+	req.Header.Add("X-Goog-FieldMask", "displayName,rating,userRatingCount,shortFormattedAddress,photos")
+
+	// TODO -- Return list of images (URLS) of the place
+
+	resp, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		fmt.Println("Error making the Google API call to retrieve place details... :(")
+		// c.IndentedJSON(http.StatusInternalServerError, nil)
+		return
+	}
+
+	// resp, err = http.Get(apiURL)
+
+	// if err != nil {
+	// 	fmt.Println("Couldn't retrieve place details :(")
+
+	// }
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
+	}
+
+	var placeDetails PlaceDetails
+
+	json.Unmarshal(body, &placeDetails)
+
+	fmt.Println(string(body))
+
+	// c.IndentedJSON(http.StatusOK, placeDetails)
 }
 
 type Coordinates struct {

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/mail"
 	"regexp"
@@ -168,6 +169,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Store user info in context for use in handlers
+		fmt.Println("USERID ASSIGNED: " + claims.UserID)
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 
@@ -182,6 +184,88 @@ func HashPassword(password string) (string, error) {
 	}
 	return string(hash), nil
 }
+
+// func LoginUser(c *gin.Context) {
+// 	db := c.MustGet("db").(*pgxpool.Pool)
+
+// 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+// 	defer cancel()
+
+// 	var user UserInfo
+// 	err := c.ShouldBindJSON(&user)
+
+// 	if err != nil {
+// 		c.IndentedJSON(http.StatusInternalServerError, nil)
+// 		return
+// 	}
+
+// 	var query string
+
+// 	_, err = ValidateUserInput(&user)
+
+// 	if err != nil {
+// 		c.IndentedJSON(http.StatusBadRequest, nil)
+// 		return
+// 	}
+
+// 	var id string
+
+// 	var passwordHash string
+
+// 	fmt.Println("Test: ")
+// 	fmt.Println(user)
+// 	if user.Username != "" {
+// 		id = user.Username
+// 		query = `
+// 			SELECT userid, username, password_hash FROM users WHERE username = $1;
+// 		`
+// 	} else if user.Email != "" {
+// 		id = user.Email
+// 		query = `
+// 			SELECT userid, username, password_hash FROM users WHERE email = $1;
+// 		`
+// 	} else {
+// 		id = user.PhoneNumber
+// 		query = `
+// 			SELECT userid, username, password_hash FROM users WHERE phone_number = $1;
+// 		`
+// 	}
+
+// 	success := AuthResponse{
+// 		Error: "",
+// 	}
+
+// 	err = db.QueryRow(ctx, query, id).Scan(&success.UserID, &success.Username, &passwordHash)
+
+// 	if err != nil {
+// 		if err == pgx.ErrNoRows {
+// 			c.IndentedJSON(http.StatusNotFound, nil)
+// 			return
+// 		}
+// 	}
+
+// 	fmt.Println("Stored in DB: " + passwordHash)
+
+// 	// newPasswordHash, err := HashPassword(user.Password)
+
+// 	fmt.Println(success)
+
+// 	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(user.Password))
+// 	if err != nil {
+// 		fmt.Println("Wrong Password!")
+// 		c.IndentedJSON(http.StatusUnauthorized, nil)
+// 		return
+// 	}
+
+// 	success.AccessToken, err = GenerateJWT(user)
+
+// 	if err != nil {
+// 		c.IndentedJSON(http.StatusInternalServerError, nil)
+// 		return
+// 	}
+
+// 	c.IndentedJSON(http.StatusAccepted, success)
+// }
 
 func LoginUser(c *gin.Context) {
 	db := c.MustGet("db").(*pgxpool.Pool)
@@ -203,28 +287,32 @@ func LoginUser(c *gin.Context) {
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, nil)
+		return
 	}
 
 	var id string
-
 	var passwordHash string
 
 	if user.Username != "" {
-		id = user.Username
+		id = strings.TrimSpace(user.Username)
 		query = `
-			SELECT userid, username, password_hash FROM users WHERE username = $1;
+			SELECT user_id, username, password_hash FROM users WHERE LOWER(username) = LOWER($1);
 		`
 	} else if user.Email != "" {
-		id = user.Email
+		id = strings.TrimSpace(strings.ToLower(user.Email))
 		query = `
-			SELECT userid, username, password_hash FROM users WHERE email = $1;
+			SELECT user_id, username, password_hash FROM users WHERE LOWER(email) = LOWER($1);
 		`
 	} else {
-		id = user.PhoneNumber
+		id = strings.TrimSpace(user.PhoneNumber)
 		query = `
-			SELECT userid, username, password_hash FROM users WHERE phone_number = $1;
+			SELECT user_id, username, password_hash FROM users WHERE phone_number = $1;
 		`
 	}
+
+	// Debug: Print exact query and parameter
+	// fmt.Printf("Executing query: %s\n", query)
+	// fmt.Printf("With parameter: '%s'\n", id)
 
 	success := AuthResponse{
 		Error: "",
@@ -234,19 +322,43 @@ func LoginUser(c *gin.Context) {
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
+			// fmt.Printf("No rows found for search value: '%s'\n", id)
+
+			// Debug query: Let's see what's actually in the database
+			// debugQuery := "SELECT username, email, phone_number FROM users LIMIT 5;"
+			// rows, debugErr := db.Query(ctx, debugQuery)
+			// if debugErr == nil {
+			// 	fmt.Println("Sample data from database:")
+			// 	defer rows.Close()
+			// 	for rows.Next() {
+			// 		var dbUsername, dbEmail, dbPhone sql.NullString
+			// 		rows.Scan(&dbUsername, &dbEmail, &dbPhone)
+			// 		fmt.Printf("  Username: '%s', Email: '%s', Phone: '%s'\n",
+			// 			dbUsername.String, dbEmail.String, dbPhone.String)
+			// 	}
+			// }
+
 			c.IndentedJSON(http.StatusNotFound, nil)
 			return
 		}
+
+		fmt.Printf("Database error: %v\n", err)
+		c.IndentedJSON(http.StatusInternalServerError, nil)
+		return
 	}
+
+	user.UserID = success.UserID
+	user.Username = success.Username
 
 	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(user.Password))
 	if err != nil {
+		fmt.Println("Wrong Password!")
 		c.IndentedJSON(http.StatusUnauthorized, nil)
 		return
 	}
 
+	// Generate JWT token
 	success.AccessToken, err = GenerateJWT(user)
-
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return
@@ -288,7 +400,7 @@ func SignupUser(c *gin.Context) {
 
 	err = db.QueryRow(ctx, query, user.Username, user.PhoneNumber, user.Email).Scan()
 
-	if err != nil && err == pgx.ErrNoRows {
+	if err != nil && err != pgx.ErrNoRows {
 		c.IndentedJSON(http.StatusConflict, nil)
 		return
 	}
@@ -303,13 +415,17 @@ func SignupUser(c *gin.Context) {
 	err = db.QueryRow(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber).Scan(userID)
 
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, nil)
+		c.IndentedJSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	success := AuthResponse{
 		Username: user.Username,
 	}
+
+	user.UserID = success.UserID
+	user.Username = success.Username
+
 	success.AccessToken, err = GenerateJWT(user)
 	success.UserID = userID
 
