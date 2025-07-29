@@ -87,6 +87,20 @@ CREATE TABLE function_attendees (
     PRIMARY KEY (user_id, function_id)
 );
 
+-- Make sure a user profile is created whenever a user signs up
+CREATE OR REPLACE FUNCTION create_user_profile()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO user_profiles (user_id, active, last_active, verified_email, verified_phone_number, functions_attended, rating)
+    VALUES (NEW.user_id, true, NOW(), false, false, 0, 0);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_create_user_profile
+    AFTER INSERT ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION create_user_profile();
 
 CREATE INDEX idx_function_attendees_function_id ON function_attendees(function_id);
 CREATE INDEX idx_function_attendees_user_id ON function_attendees(user_id);

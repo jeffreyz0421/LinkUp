@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -81,9 +82,12 @@ func GetUserProfile(c *gin.Context) {
 
 	var userProfile UserProfile
 
-	err = db.QueryRow(ctx, query, userID).Scan(&userProfile.Bio, &userProfile.Birthdate, &userProfile.Hobbies, &userProfile.LastActiveTime, &userProfile.LastActiveLocation, &userProfile.NumOfFunctionsAttended, &userProfile.Rating)
+	row := db.QueryRow(ctx, query, userID)
+
+	err = row.Scan(&userProfile.Bio, &userProfile.Birthdate, &userProfile.Hobbies, &userProfile.LastActiveTime, &userProfile.LastActiveLocation, &userProfile.NumOfFunctionsAttended, &userProfile.Rating)
 
 	if err != nil {
+		fmt.Println("Error scanning rows: " + err.Error())
 		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return
 	}
