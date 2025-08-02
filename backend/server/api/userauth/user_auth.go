@@ -40,8 +40,8 @@ type JWTSecret struct {
 }
 
 type Claims struct {
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
+	UserID   uuid.UUID `json:"user_id"`
+	Username string    `json:"username"`
 	jwt.RegisteredClaims
 }
 
@@ -99,7 +99,7 @@ func ValidateUserInput(userInfo *UserInfo) (bool, error) {
 
 func GenerateJWT(user UserInfo) (string, error) {
 	claims := &Claims{
-		UserID:   user.UserID.String(),
+		UserID:   user.UserID,
 		Username: user.Username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(365 * 24 * time.Hour)),
@@ -162,7 +162,8 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Store user info in context
-		c.Set("user_id", claims.UserID)
+		c.Set("user_id", claims.UserID.String())
+		fmt.Println("UserID: " + claims.UserID.String())
 		c.Set("username", claims.Username)
 
 		c.Next()
@@ -293,28 +294,22 @@ func SignupUser(c *gin.Context) {
 
 	query = `
 		INSERT INTO users (username, email, password_hash, name, phone_number)
-		VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
+		VALUES ($1, $2, $3, $4, $5) RETURNING user_id, username;
 	`
 
-	var userID uuid.UUID
+	var success AuthResponse
 
-	err = db.QueryRow(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber).Scan(&userID)
+	err = db.QueryRow(ctx, query, user.Username, user.Email, passwordHash, user.Name, user.PhoneNumber).Scan(&success.UserID, &success.Username)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	success := AuthResponse{
-		Username: user.Username,
-	}
-
 	user.UserID = success.UserID
 	user.Username = success.Username
 
 	success.AccessToken, err = GenerateJWT(user)
-	success.UserID = userID
-
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, nil)
 		return

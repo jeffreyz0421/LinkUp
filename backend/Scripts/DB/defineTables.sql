@@ -10,9 +10,11 @@ DROP TABLE IF EXISTS users CASCADE;
 
 DROP TYPE IF EXISTS functiontype CASCADE;
 DROP TYPE IF EXISTS attendancestatus CASCADE;
+DROP TYPE IF EXISTS friendshipstatus CASCADE;
 
 
 CREATE TYPE functiontype AS ENUM ('meetup', 'linkup', 'gangup', 'pullup');
+CREATE TYPE friendshipstatus AS ENUM ('requested', 'accepted');
 CREATE TYPE attendancestatus AS ENUM ('invited', 'going', 'already there');
 
 
@@ -33,27 +35,29 @@ CREATE TABLE universities (
 
 CREATE TABLE user_profiles (
     user_id UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-    active BOOLEAN,
-    bio TEXT,
+    active BOOLEAN DEFAULT true,
+    bio TEXT DEFAULT 'Hi!',
     birthdate DATE,
-    hobbies VARCHAR(63)[],
-    friends UUID[],
+    hobbies VARCHAR(63)[] DEFAULT '{}',
+    friends UUID[] DEFAULT '{}',
     last_active_location geography(Point, 4326),
-    last_active TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_active TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     school_id UUID REFERENCES universities(university_id),
-    verified_email BOOLEAN,
-    verified_phone_number BOOLEAN,
-    functions_attended smallint,
-    rating smallint
+    verified_email BOOLEAN DEFAULT false,
+    verified_phone_number BOOLEAN DEFAULT false,
+    functions_attended smallint DEFAULT 0,
+    rating smallint DEFAULT 0
 );
 
 CREATE TABLE friendships (
     user_id1 UUID NOT NULL,
     user_id2 UUID NOT NULL,
+    friendship_status friendshipstatus NOT NULL,
     PRIMARY KEY (user_id1, user_id2),
     FOREIGN KEY (user_id1) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id2) REFERENCES users(user_id) ON DELETE CASCADE,
-    CHECK (user_id1 != user_id2)
+    CHECK (user_id1 != user_id2),
+    CHECK (user_id1 < user_id2)
 );
 
 CREATE TABLE buildings (
@@ -104,3 +108,5 @@ CREATE TRIGGER trigger_create_user_profile
 
 CREATE INDEX idx_function_attendees_function_id ON function_attendees(function_id);
 CREATE INDEX idx_function_attendees_user_id ON function_attendees(user_id);
+
+CREATE EXTENSION IF NOT EXISTS POSTGIS;

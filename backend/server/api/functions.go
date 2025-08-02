@@ -69,6 +69,8 @@ func CreateMeetup(c *gin.Context) {
 
 	if err != nil {
 		fmt.Println("Create Meetup Query Execution Error: " + err.Error())
+		c.IndentedJSON(http.StatusInternalServerError, nil)
+		return
 	}
 
 	type Response struct {
