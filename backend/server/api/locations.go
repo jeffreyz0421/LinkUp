@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	GoogleAPIKey = "AIzaSyClvQe_d7EannidrZ64K-Jn6W3cwIStJQk"
+	GoogleAPIKey = ""
 )
 
 type PlaceDetails struct {

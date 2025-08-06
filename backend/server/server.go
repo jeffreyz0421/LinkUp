@@ -45,7 +45,7 @@ func main() {
 	// Group endpoints with corresponding middleware
 	publicRoutes := router.Group("/api")
 	{
-		userRoutes := publicRoutes.Group("/user")
+		userRoutes := publicRoutes.Group("/users")
 		{
 			userRoutes.POST("/signup", auth.SignupUser)
 			userRoutes.POST("/login", auth.LoginUser)
@@ -62,10 +62,16 @@ func main() {
 		}
 		userRoutes := protectedRoutes.Group("/users")
 		{
+			friendRoutes := userRoutes.Group("/friend")
+			{
+				friendRoutes.GET("", api.GetFriends)
+				friendRoutes.POST("", api.SendFriendRequest)
+				friendRoutes.PUT("", api.AcceptFriendRequest)
+			}
 			userRoutes.GET("", api.GetUserProfile)
 			userRoutes.PUT("", api.UpdateProfile)
 		}
 	}
 
-	router.Run("0.0.0.0:8080")
+	router.Run("localhost:8080")
 }

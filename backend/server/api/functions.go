@@ -9,8 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 
-	uuid "github.com/google/uuid"
-	// uuid "github.com/jackc/pgx/pgtype/ext/gofrs-uuid"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -28,6 +27,87 @@ type FunctionData struct {
 	PlaceID             string      `json:"place_id"`
 	InvitedUsers        []string    `json:"invited_users"`
 	FunctionID          uuid.UUID   `json:"function_id"`
+}
+
+func InviteUser(c *gin.Context) {
+	type InviteUserRequest struct {
+		Invitee    uuid.UUID `json:"invitee"`
+		FunctionID uuid.UUID `json:"function_id"`
+	}
+
+	var inviteRequest InviteUserRequest
+
+	err := c.MustBindWith(&inviteRequest, binding.JSON)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, nil)
+		return
+	}
+
+	db := c.MustGet("db").(*pgxpool.Pool)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	query := `
+		INSERT INTO function_attendees (user_id, function_id, attendance_status) VALUES ($1, $2, $3) returning user_id;
+	`
+
+	var invitee uuid.UUID
+
+	err = db.QueryRow(ctx, query, inviteRequest.Invitee, inviteRequest.FunctionID, "invited").Scan(&invitee)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, nil)
+		return
+	}
+
+	c.IndentedJSON(http.StatusCreated, nil)
+}
+
+func AcceptInvite(c *gin.Context) {
+	var userID uuid.UUID
+	userIDString := c.MustGet("user_id").(string)
+	userID, err := uuid.Parse(userIDString)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, nil)
+		return
+	}
+
+	type AcceptInviteRequest struct {
+		FunctionID uuid.UUID `json:"function_id"`
+	}
+
+	var request AcceptInviteRequest
+
+	err = c.MustBindWith(&request, binding.JSON)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, nil)
+		return
+	}
+
+	db := c.MustGet("db").(*pgxpool.Pool)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	query := `
+		UPDATE function_attendees
+		SET attendance_status = 'going'
+		WHERE user_id = $1 AND function_id = $2
+		RETURNING attendance_status;
+	`
+
+	var confirmation string
+
+	err = db.QueryRow(ctx, query, userID, request.FunctionID).Scan(&confirmation)
+
+	if err != nil || confirmation != "going" {
+		c.IndentedJSON(http.StatusInternalServerError, nil)
+		return
+	}
+
+	c.IndentedJSON(http.StatusCreated, nil)
 }
 
 func CreateMeetup(c *gin.Context) {
