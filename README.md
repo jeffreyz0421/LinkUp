@@ -1,4 +1,4 @@
-# jizzmap
+# LinkUp
 
 A new Flutter project.
 
