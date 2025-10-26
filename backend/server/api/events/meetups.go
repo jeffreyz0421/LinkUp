@@ -1,4 +1,4 @@
-package api
+package events
 
 import (
 	"context"
@@ -8,108 +8,53 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type FunctionData struct {
-	Name                string      `json:"name"`
-	Host                uuid.UUID   `json:"host"`
-	SecondHost          uuid.UUID   `json:"host1"`
-	Vibe                string      `json:"vibe"`
-	FunctionType        string      `json:"function_type"`
-	LocationName        string      `json:"location_name"`
-	LocationCoordinates Coordinates `json:"location_coordinates"`
-	StartTime           time.Time   `json:"start_time"`
-	EndTime             time.Time   `json:"end_time"`
-	InviteStatus        string      `json:"invite_status"`
-	PlaceID             string      `json:"place_id"`
-	InvitedUsers        []string    `json:"invited_users"`
-	FunctionID          uuid.UUID   `json:"function_id"`
-}
+/*
+=====================
+MEETUP ENDPOINTS
+=====================
 
-func InviteUser(c *gin.Context) {
-	type InviteUserRequest struct {
-		Invitee    uuid.UUID `json:"invitee"`
-		FunctionID uuid.UUID `json:"function_id"`
-	}
+Meetups are multi-person events where the host can invite specific users.
+*/
 
-	var inviteRequest InviteUserRequest
+/*
+====================
+CreateMeetup
 
-	err := c.MustBindWith(&inviteRequest, binding.JSON)
+Purpose: Create a new meetup event. After creation, the host can invite users.
 
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, nil)
-		return
-	}
+Endpoint: POST /api/meetups
+Authorization: Bearer token required
 
-	db := c.MustGet("db").(*pgxpool.Pool)
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
+Frontend Request:
+	Headers:
+		- Authorization: Bearer {access_token}
+		- Content-Type: application/json
 
-	query := `
-		INSERT INTO function_attendees (user_id, function_id, attendance_status) VALUES ($1, $2, $3) returning user_id;
-	`
+	Body (JSON):
+		{
+			"name": "Saturday Night Get Together",
+			"location_name": "Blue House Pizza",
+			"location_coordinates": {
+				"latitude": 42.2808,
+				"longitude": -83.7430
+			},
+			"start_time": "2024-11-02T19:00:00Z",
+			"end_time": "2024-11-02T22:00:00Z",  // Optional
+			"vibe": "casual"
+		}
 
-	var invitee uuid.UUID
-
-	err = db.QueryRow(ctx, query, inviteRequest.Invitee, inviteRequest.FunctionID, "invited").Scan(&invitee)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, nil)
-		return
-	}
-
-	c.IndentedJSON(http.StatusCreated, nil)
-}
-
-func AcceptInvite(c *gin.Context) {
-	var userID uuid.UUID
-	userIDString := c.MustGet("user_id").(string)
-	userID, err := uuid.Parse(userIDString)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, nil)
-		return
-	}
-
-	type AcceptInviteRequest struct {
-		FunctionID uuid.UUID `json:"function_id"`
-	}
-
-	var request AcceptInviteRequest
-
-	err = c.MustBindWith(&request, binding.JSON)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, nil)
-		return
-	}
-
-	db := c.MustGet("db").(*pgxpool.Pool)
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-
-	query := `
-		UPDATE function_attendees
-		SET attendance_status = 'going'
-		WHERE user_id = $1 AND function_id = $2
-		RETURNING attendance_status;
-	`
-
-	var confirmation string
-
-	err = db.QueryRow(ctx, query, userID, request.FunctionID).Scan(&confirmation)
-
-	if err != nil || confirmation != "going" {
-		c.IndentedJSON(http.StatusInternalServerError, nil)
-		return
-	}
-
-	c.IndentedJSON(http.StatusCreated, nil)
-}
-
+Response:
+	- Success: 201 Created
+		{
+			"function_id": "uuid-of-created-meetup"
+		}
+	- Bad Request: 400 (missing required fields)
+	- Server Error: 500
+*/
 func CreateMeetup(c *gin.Context) {
 	var userID uuid.UUID
 	userIDString := c.MustGet("user_id").(string)
@@ -166,10 +111,46 @@ func CreateMeetup(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, response)
 }
 
-type FunctionDataList struct {
-	Functions []FunctionData `json:"functions"`
-}
+/*
+====================
+GetUserMeetups
 
+Purpose: Get all meetups for the authenticated user (both hosted and attended).
+
+Endpoint: GET /api/meetups
+Authorization: Bearer token required
+
+Frontend Request:
+	Headers:
+		- Authorization: Bearer {access_token}
+
+	Query Params:
+		- None (uses authenticated user from token)
+
+Response:
+	- Success: 200 OK
+		{
+			"functions": [
+				{
+					"function_id": "uuid",
+					"host": "uuid",
+					"name": "Saturday Night Get Together",
+					"function_type": "meetup",
+					"place_id": "ChIJ...",
+					"start_time": "2024-11-02T19:00:00Z",
+					"end_time": "2024-11-02T22:00:00Z",
+					"vibe": "casual"
+				},
+				...
+			]
+		}
+	- Bad Request: 400 (invalid user ID)
+	- Server Error: 500
+
+Notes:
+	- Returns meetups where user is the host OR is an attendee
+	- Empty array if user has no meetups
+*/
 func GetUserMeetups(c *gin.Context) {
 	var userID uuid.UUID
 	userIDString := c.MustGet("user_id").(string)
@@ -226,3 +207,4 @@ func GetUserMeetups(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, meetups)
 }
+

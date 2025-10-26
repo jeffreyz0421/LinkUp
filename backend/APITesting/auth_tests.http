@@ -1,0 +1,260 @@
+### LinkUp Backend API Tests - Authentication
+### Use with VS Code REST Client extension
+
+@baseUrl = http://localhost:8080/api
+@contentType = application/json
+
+### Variables (update after signup)
+@userToken1 = 
+@userToken2 = 
+
+### ========================================
+### SIGNUP TESTS
+### ========================================
+
+### Test 1: Successful signup with all fields
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser1",
+  "email": "testuser1@example.com",
+  "password": "SecurePass123",
+  "name": "Test User One",
+  "phone_number": "15551234567"
+}
+
+### Test 2: Signup with just username and password (minimal)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "minimaluser",
+  "email": "minimal@test.com",
+  "password": "Minimal123",
+  "name": "Minimal Name",
+  "phone_number": "15559876543"
+}
+
+### Test 3: Signup with duplicate username (should fail)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser1",
+  "email": "different@example.com",
+  "password": "DifferentPass123",
+  "name": "Different User",
+  "phone_number": "15559999999"
+}
+
+### Test 4: Signup with duplicate email (should fail)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "different_user",
+  "email": "testuser1@example.com",
+  "password": "AnotherPass123",
+  "name": "Another User",
+  "phone_number": "15551111111"
+}
+
+### Test 5: Signup with duplicate phone (should fail)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "another_user",
+  "email": "another@example.com",
+  "password": "Password123",
+  "name": "Another User",
+  "phone_number": "15551234567"
+}
+
+### Test 6: Signup with invalid email format (should fail)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "bademail",
+  "email": "notanemail",
+  "password": "ValidPass123",
+  "name": "Bad Email User",
+  "phone_number": "15554444444"
+}
+
+### Test 7: Signup with short password (should fail)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "shortpass",
+  "email": "short@example.com",
+  "password": "Short1",
+  "name": "Short Password User",
+  "phone_number": "15555555555"
+}
+
+### Test 8: Signup with phone number variations
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "phonevariant",
+  "email": "phone@example.com",
+  "password": "SecurePass123",
+  "name": "Phone Variant",
+  "phone_number": "(555) 123-4567"
+}
+
+### Test 9: Signup for testing linkups (User A)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "linkup_user_a",
+  "email": "linkupa@test.com",
+  "password": "LinkUpPass123",
+  "name": "LinkUp User A",
+  "phone_number": "15551000001"
+}
+
+### Test 10: Signup for testing linkups (User B)
+POST {{baseUrl}}/users/signup
+Content-Type: {{contentType}}
+
+{
+  "username": "linkup_user_b",
+  "email": "linkupb@test.com",
+  "password": "LinkUpPass123",
+  "name": "LinkUp User B",
+  "phone_number": "15551000002"
+}
+
+### ========================================
+### LOGIN TESTS
+### ========================================
+
+### Test 11: Login with username
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser1",
+  "password": "SecurePass123"
+}
+
+### Test 12: Login with email
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser1@example.com",
+  "password": "SecurePass123"
+}
+
+### Test 13: Login with phone number
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "phone_number": "15551234567",
+  "password": "SecurePass123"
+}
+
+### Test 14: Login with phone variations (without formatting)
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "phone_number": "15559876543",
+  "password": "Minimal123"
+}
+
+### Test 15: Login with wrong password (should fail)
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser1",
+  "password": "WrongPassword"
+}
+
+### Test 16: Login with non-existent user (should fail)
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "username": "nonexistent",
+  "password": "SomePassword123"
+}
+
+### Test 17: Login with empty credentials (should fail)
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "username": "",
+  "password": ""
+}
+
+### Test 18: Login case-insensitive username
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "username": "TESTUSER1",
+  "password": "SecurePass123"
+}
+
+### Test 19: Login case-insensitive email
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "email": "TESTUSER1@EXAMPLE.COM",
+  "password": "SecurePass123"
+}
+
+### Test 20: Multiple login attempts (should work each time)
+POST {{baseUrl}}/users/login
+Content-Type: {{contentType}}
+
+{
+  "username": "testuser1",
+  "password": "SecurePass123"
+}
+
+### ========================================
+### AUTHENTICATED REQUESTS (Require Token)
+### ========================================
+### Copy token from successful login response into @userToken1 or @userToken2
+
+### Test 21: Get user profile (requires token)
+GET {{baseUrl}}/users
+Authorization: Bearer {{userToken1}}
+
+### Test 22: Update user location (requires token)
+PUT {{baseUrl}}/users/location
+Authorization: Bearer {{userToken1}}
+Content-Type: {{contentType}}
+
+{
+  "latitude": 42.2808,
+  "longitude": -83.7430
+}
+
+### Test 23: Get friends list (requires token)
+GET {{baseUrl}}/users/friend
+Authorization: Bearer {{userToken1}}
+
+### ========================================
+### TOKEN MANAGEMENT
+### ========================================
+
+### Notes:
+### 1. After successful signup/login, extract the access_token from response
+### 2. Update the variables @userToken1 and @userToken2 at the top
+### 3. Use these tokens for protected endpoint tests
+

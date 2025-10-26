@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"server/api"
+	"server/api/events"
 	auth "server/api/userauth"
 
 	"github.com/gin-gonic/gin"
@@ -58,8 +59,16 @@ func main() {
 	{
 		meetupRoutes := protectedRoutes.Group("/meetups")
 		{
-			meetupRoutes.POST("", api.CreateMeetup)
-			meetupRoutes.GET("", api.GetUserMeetups)
+			meetupRoutes.POST("", events.CreateMeetup)
+			meetupRoutes.GET("", events.GetUserMeetups)
+		}
+		linkupRoutes := protectedRoutes.Group("/linkups")
+		{
+			linkupRoutes.POST("", events.CreateLinkup)
+			linkupRoutes.GET("/nearby", events.GetNearbyLinkups)
+			linkupRoutes.GET("", events.GetUserLinkups)
+			linkupRoutes.POST("/:id/join", events.JoinLinkup)
+			linkupRoutes.DELETE("/:id", events.CancelLinkup)
 		}
 		userRoutes := protectedRoutes.Group("/users")
 		{
