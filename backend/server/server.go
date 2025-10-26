@@ -54,6 +54,7 @@ func main() {
 
 	protectedRoutes := router.Group("/api")
 	protectedRoutes.Use(auth.AuthMiddleware())
+	protectedRoutes.Use(api.UpdateLastLocationMiddleware())
 	{
 		meetupRoutes := protectedRoutes.Group("/meetups")
 		{
@@ -70,6 +71,7 @@ func main() {
 			}
 			userRoutes.GET("", api.GetUserProfile)
 			userRoutes.PUT("", api.UpdateProfile)
+			userRoutes.PUT("/location", api.UpdateUserLocation)
 		}
 	}
 

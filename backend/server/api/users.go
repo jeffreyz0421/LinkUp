@@ -229,6 +229,58 @@ func SendFriendRequest(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, nil)
 }
 
+func UpdateUserLocation(c *gin.Context) {
+	userIDString := c.MustGet("user_id").(string)
+	userID, err := uuid.Parse(userIDString)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, nil)
+		return
+	}
+
+	type LocationUpdate struct {
+		Latitude  float64 `json:"latitude" binding:"required"`
+		Longitude float64 `json:"longitude" binding:"required"`
+	}
+
+	var location LocationUpdate
+
+	err = c.ShouldBindJSON(&location)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid location data"})
+		return
+	}
+
+	// Validate coordinates
+	if location.Latitude < -90 || location.Latitude > 90 ||
+		location.Longitude < -180 || location.Longitude > 180 {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid coordinates"})
+		return
+	}
+
+	db := c.MustGet("db").(*pgxpool.Pool)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Update location and last_active timestamp
+	query := `
+		UPDATE user_profiles 
+		SET last_active_location = ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography,
+			last_active = CURRENT_TIMESTAMP
+		WHERE user_id = $1;
+	`
+
+	_, err = db.Exec(ctx, query, userID, location.Longitude, location.Latitude)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Failed to update location"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "Location updated successfully"})
+}
+
 func AcceptFriendRequest(c *gin.Context) {
 	userIDString := c.MustGet("user_id").(string)
 	userID, err := uuid.Parse(userIDString)
