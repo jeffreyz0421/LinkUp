@@ -7,7 +7,7 @@ PODS:
     - FlutterMacOS
   - image_cropper (0.0.4):
     - Flutter
-    - TOCropViewController (~> 2.6.1)
+    - TOCropViewController (~> 2.7.4)
   - image_picker_ios (0.0.1):
     - Flutter
   - mapbox_maps_flutter (2.9.1):
@@ -35,7 +35,7 @@ PODS:
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
-  - TOCropViewController (2.6.1)
+  - TOCropViewController (2.7.4)
   - Turf (4.0.0)
   - url_launcher_ios (0.0.1):
     - Flutter
@@ -92,7 +92,7 @@ SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   geocoding_ios: 33776c9ebb98d037b5e025bb0e7537f6dd19646e
   geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
-  image_cropper: 655b3ba703c9e15e3111e79151624d6154288774
+  image_cropper: c4326ea50132b1e1564499e5d32a84f01fb03537
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   mapbox_maps_flutter: da8a4af972d0bb83b3ce125628ab1390c1932fe3
   MapboxCommon: 2bcc5f4477943750ecd5ab3a46e9375761deb4df
@@ -103,7 +103,7 @@ SPEC CHECKSUMS:
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
-  TOCropViewController: edfd4f25713d56905ad1e0b9f5be3fbe0f59c863
+  TOCropViewController: 80b8985ad794298fb69d3341de183f33d1853654
   Turf: c9eb11a65d96af58cac523460fd40fec5061b081
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
 

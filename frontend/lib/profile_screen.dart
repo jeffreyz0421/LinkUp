@@ -1,47 +1,3 @@
-// ███  profile_screen.dart  ███
-//
-// High‑fidelity profile page.
-//
-// ╭───────────────────────────── FEATURES ─────────────────────────────╮
-// │ • Gradient / blur background identical to MapScreen               │
-// │ • Bottom nav‑bar clone (Profile tab highlighted)                  │
-// │ • Centered purple “+” -> CASScreen                                │
-// │ • Circle avatar with camera / gallery picker + permission checks  │
-// │ • Hobby chips: add • drag‑reorder • remove                        │
-// │ • Tags persisted via REST (GET / PUT) using ProfileService        │
-// ╰────────────────────────────────────────────────────────────────────╯
-//
-// External deps used here:
-//
-//   image_picker            – pick profile photo
-//   permission_handler      – runtime camera / gallery perms
-//   shared_preferences       – cache basic user fields locally
-//   http                     – raw client used by ProfileService
-//   services/profile_service.dart         (REST helpers)
-//   session_manager.dart                 (current JWT & user‑id)
-//
-// Make sure you created/updated those two helper files exactly as in
-// the previous answer (they expose ProfileService.{getHobbies,setHobbies}
-// and SessionManager.instance.{jwt,userId}).
-// ███  profile_screen.dart  ███
-//
-// Pixel‑perfect profile page kept in sync with the backend.
-//
-// ──────────────────────────────────────────────────────────
-// • Matches MapScreen’s gradient + bottom‑nav.
-// • Circle avatar with camera / gallery picker + perm checks.
-// • Hobby chips (add ▸ drag‑reorder ▸ delete) persisted via REST.
-// • Purple “+” opens CASScreen.
-// • Works in two modes:
-//     – Logged‑in user  → hobbies pulled/pushed to server.
-//     – Guest           → everything runs locally, nothing persisted.
-//
-// External helper files (see previous replies):
-//   • services/profile_service.dart      (REST wrapper)
-//   • session_manager.dart               (jwt & user‑id, nullable)
-//   • config.dart                        (serverBaseUrl)
-//   • cas.dart                           (destination for the FAB)
-//
 // lib/profile_screen.dart
 
 import 'dart:io';
@@ -57,39 +13,82 @@ import 'package:http/http.dart' as http;
 import 'cas.dart';
 import 'config.dart';
 import 'session_manager.dart';
+import 'login_screen.dart';
 
-/// Simple REST wrapper for GET/PUT /api/users/{userId}/hobbies
+class Profile {
+  final String name, username, email, phone;
+  final List<String> hobbies;
+
+  Profile({
+    required this.name,
+    required this.username,
+    required this.email,
+    required this.phone,
+    required this.hobbies,
+  });
+
+  factory Profile.fromJson(Map<String, dynamic> j) => Profile(
+        name: (j['name'] as String?) ?? '',
+        username: (j['username'] as String?) ?? '',
+        email: (j['email'] as String?) ?? '',
+        phone: (j['phone_number'] as String?) ?? '',
+        hobbies: List<String>.from((j['hobbies'] as List<dynamic>? ?? [])),
+      );
+}
+
 class ProfileService {
   final http.Client _client;
   ProfileService(this._client);
 
-  Future<List<String>> getHobbies(String userId) async {
+  String get _base => Config.serverBaseUrl;
+
+  Future<Profile> getProfile() async {
     final token = await SessionManager.instance.jwt;
-    final resp = await _client.get(
-      Uri.parse('${Config.serverBaseUrl}/users/$userId/hobbies'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-    if (resp.statusCode == 200) {
-      final body = Map<String, dynamic>.from(jsonDecode(resp.body));
-      return List<String>.from(body['hobbies'] as List);
+    if (token == null || token.isEmpty) {
+      throw Exception('unauthorized');
     }
-    throw Exception('Failed to load hobbies (${resp.statusCode})');
+    final uri = Uri.parse('$_base/api/users');
+    final resp = await _client
+        .get(
+          uri,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        )
+        .timeout(Duration(milliseconds: Config.apiTimeout));
+
+    if (resp.statusCode == 302) {
+      throw Exception('unauthorized');
+    }
+    if (resp.statusCode == 401 || resp.statusCode == 403) {
+      throw Exception('unauthorized');
+    }
+    if (resp.statusCode != 200) {
+      throw Exception('Failed to load profile (${resp.statusCode}): ${resp.body}');
+    }
+    final body = jsonDecode(resp.body) as Map<String, dynamic>;
+    return Profile.fromJson(body);
   }
 
-  Future<void> setHobbies(String userId, List<String> hobbies) async {
+  Future<void> setHobbies(List<String> hobbies) async {
     final token = await SessionManager.instance.jwt;
-    final resp = await _client.put(
-      Uri.parse('${Config.serverBaseUrl}/users/$userId/hobbies'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'hobbies': hobbies}),
-    );
-    if (resp.statusCode != 202 && resp.statusCode != 200) {
+    if (token == null || token.isEmpty) return;
+    final uri = Uri.parse('$_base/api/users');
+    final resp = await _client
+        .put(
+          uri,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'hobbies': hobbies}),
+        )
+        .timeout(Duration(milliseconds: Config.apiTimeout));
+
+    if (resp.statusCode != 200 &&
+        resp.statusCode != 202 &&
+        resp.statusCode != 204) {
       throw Exception('Failed to save hobbies (${resp.statusCode})');
     }
   }
@@ -98,8 +97,10 @@ class ProfileService {
 class TagData {
   final String id, text;
   TagData({required this.id, required this.text});
-  @override bool operator ==(Object o) => o is TagData && o.id == id;
-  @override int get hashCode => id.hashCode;
+  @override
+  bool operator ==(Object o) => o is TagData && o.id == id;
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class ProfileScreen extends StatefulWidget {
@@ -114,8 +115,7 @@ const double _centerFabSize = 64;
 class _ProfileScreenState extends State<ProfileScreen>
     with TickerProviderStateMixin {
   File? _pfp;
-  String? _name = 'Your Name', _username = '', _email = '', _phone = '';
-
+  String? _name, _username, _email, _phone;
   final List<TagData> _tags = [];
   bool _showAddInput = false;
   final _tagCtl = TextEditingController();
@@ -125,6 +125,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _loading = true, _syncing = false;
   final _api = ProfileService(http.Client());
   String? _userId;
+  String? _errorMsg;
+  bool _suppressErrorBanner = false;
   bool get _isGuest => _userId == null || _userId!.isEmpty;
 
   @override
@@ -141,37 +143,94 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
-  Future<void> _bootstrap() async {
-    try {
-      _userId = await SessionManager.instance.userId;
-      final prefs = await SharedPreferences.getInstance();
-      _name = prefs.getString('name') ?? _name;
-      _username = prefs.getString('username') ?? '';
-      _email = prefs.getString('email') ?? '';
-      _phone = prefs.getString('phone_number') ?? '';
-      if (!_isGuest) {
-        final raw = await _api.getHobbies(_userId!);
-        _tags.addAll(raw.map((h) => TagData(id: h, text: h)));
-      }
-    } catch (e) {
-      debugPrint('Profile bootstrap error: $e');
-    } finally {
-      if (mounted) setState(() => _loading = false);
+  Future<void> _clearSessionAndRedirect() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('jwt');
+    await prefs.remove('user_id');
+    await prefs.remove('username');
+    await prefs.remove('name');
+    await prefs.remove('email');
+    await prefs.remove('phone_number');
+    await SessionManager.instance.update(userId: '', jwt: '', username: '');
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
     }
   }
 
+  Future<void> _bootstrap() async {
+  try {
+    _userId = await SessionManager.instance.userId;
+    final prefs = await SharedPreferences.getInstance();
+
+    _name = prefs.getString('name') ?? 'Your Name';
+    _username = prefs.getString('username') ?? '';
+    _email = prefs.getString('email') ?? '';
+    _phone = prefs.getString('phone_number') ?? '';
+
+    // Load cached hobbies first so UI shows something immediately.
+    final cachedHobbies = prefs.getStringList('hobbies') ?? [];
+    _tags
+      ..clear()
+      ..addAll(cachedHobbies.map((h) => TagData(id: h, text: h)));
+
+    if (!_isGuest) {
+      final prof = await _api.getProfile();
+
+      await prefs.setString('name', prof.name);
+      await prefs.setString('username', prof.username);
+      await prefs.setString('email', prof.email);
+      await prefs.setString('phone_number', prof.phone);
+      await prefs.setStringList('hobbies', prof.hobbies);
+
+      _name = prof.name;
+      _username = prof.username;
+      _email = prof.email;
+      _phone = prof.phone;
+      _tags
+        ..clear()
+        ..addAll(prof.hobbies.map((h) => TagData(id: h, text: h)));
+    }
+  } catch (e) {
+    debugPrint('Profile bootstrap error: $e');
+    if (e.toString().toLowerCase().contains('unauthorized')) {
+      await _clearSessionAndRedirect();
+      return;
+    }
+    setState(() {
+      _errorMsg = 'Failed to load fresh profile; showing cached values.';
+      _suppressErrorBanner = false;
+    });
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) setState(() => _suppressErrorBanner = true);
+    });
+  } finally {
+    if (mounted) setState(() => _loading = false);
+  }
+}
+
+
   Future<void> _syncTags() async {
-    if (_isGuest) return;
-    setState(() => _syncing = true);
-    try {
-      await _api.setHobbies(_userId!, _tags.map((t) => t.text).toList());
-    } catch (e) {
+  if (_isGuest) return;
+  setState(() => _syncing = true);
+  try {
+    final hobbyList = _tags.map((t) => t.text).toList();
+    await _api.setHobbies(hobbyList);
+    // Persist locally on success
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('hobbies', hobbyList);
+  } catch (e) {
+    if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Failed to sync – $e')));
-    } finally {
-      if (mounted) setState(() => _syncing = false);
     }
+  } finally {
+    if (mounted) setState(() => _syncing = false);
   }
+}
 
   void _addTag() {
     final t = _tagCtl.text.trim();
@@ -182,7 +241,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       _tagCtl.clear();
     });
     _syncTags();
-    Future.microtask(() => _tagScroll.jumpTo(_tagScroll.position.maxScrollExtent));
+    Future.microtask(
+        () => _tagScroll.jumpTo(_tagScroll.position.maxScrollExtent));
   }
 
   void _removeTag(String id) {
@@ -200,24 +260,29 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _pickImage(ImageSource src) async {
-    final perm = src == ImageSource.camera ? Permission.camera : Permission.photos;
+    final perm =
+        src == ImageSource.camera ? Permission.camera : Permission.photos;
     if (!(await perm.request()).isGranted) {
+      if (!mounted) return;
       showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Permission needed'),
-          content: const Text('Enable access to change photo.'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            TextButton(onPressed: () => openAppSettings(), child: const Text('Settings')),
-          ],
-        ),
-      );
+          context: context,
+          builder: (_) => AlertDialog(
+                title: const Text('Permission needed'),
+                content: const Text('Enable access to change photo.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel')),
+                  TextButton(
+                      onPressed: () => openAppSettings(),
+                      child: const Text('Settings')),
+                ],
+              ));
       return;
     }
-    final x = await ImagePicker().pickImage(source: src, imageQuality: 85, maxWidth: 800);
+    final x = await ImagePicker()
+        .pickImage(source: src, imageQuality: 85, maxWidth: 800);
     if (x != null && mounted) setState(() => _pfp = File(x.path));
-    // TODO: upload to your avatar endpoint
   }
 
   @override
@@ -234,7 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             colors: [Color(0xFFB3FFFF), Color(0xFFBABAF2)],
           ),
         ),
-        child: Stack(alignment: Alignment.bottomCenter, children: [
+        child: Stack(children: [
           _blur(-134, -58, 582, const Color(0xFF60A5FA), 184),
           _blur(27, 419, 934, const Color(0xFFD8B4FE), 295),
           SafeArea(
@@ -244,15 +309,72 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Column(
                   children: [
                     _header(),
-                    _profileInfo(),
-                    Expanded(child: _tagSection()),
+                    if (_errorMsg != null && !_suppressErrorBanner)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF0D9),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.orangeAccent),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _errorMsg!,
+                                  style: const TextStyle(
+                                      color: Colors.black87, fontSize: 14),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () =>
+                                    setState(() => _suppressErrorBanner = true),
+                                child: const Icon(Icons.close,
+                                    size: 18, color: Colors.black54),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    // Profile info + hobbies. Profile info is intrinsic; hobbies expands.
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          bottom: _navBarHeight +
+                              MediaQuery.of(context).padding.bottom +
+                              12,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _profileInfo(),
+                            _tagSection(),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
-          _bottomNav(),
-          _fabPlus(),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _bottomNav(),
+          ),
+          Positioned(
+            bottom: _navBarHeight - (_centerFabSize / 2),
+            left: 0,
+            right: 0,
+            child: _fabPlusContent(),
+          ),
         ]),
       ),
     );
@@ -260,10 +382,13 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _blur(double l, double t, double s, Color c, double sigma) =>
       Positioned(
-        left: l, top: t,
+        left: l,
+        top: t,
         child: Container(
-          width: s, height: s,
-          decoration: BoxDecoration(color: c.withOpacity(.8), shape: BoxShape.circle),
+          width: s,
+          height: s,
+          decoration:
+              BoxDecoration(color: c.withOpacity(.8), shape: BoxShape.circle),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
             child: const SizedBox(),
@@ -273,12 +398,53 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _header() => Padding(
         padding: const EdgeInsets.all(8),
-        child: Row(children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, size: 30, color: Color(0xFF4B5563)),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ]),
+        child: Row(
+          children: [
+            IconButton(
+              icon:
+                  const Icon(Icons.arrow_back, size: 30, color: Color(0xFF4B5563)),
+              onPressed: () => Navigator.pop(context),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Sign Out'),
+                        content:
+                            const Text('Are you sure you want to sign out?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Sign Out'),
+                          ),
+                        ],
+                      ),
+                    ) ??
+                    false;
+                if (confirmed) {
+                  await _clearSessionAndRedirect();
+                }
+              },
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                backgroundColor: Colors.white.withOpacity(0.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                foregroundColor: const Color(0xFF4B5563),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              child: const Text('Sign Out'),
+            ),
+          ],
+        ),
       );
 
   Widget _profileInfo() => Padding(
@@ -288,35 +454,98 @@ class _ProfileScreenState extends State<ProfileScreen>
             CircleAvatar(
               radius: 83,
               backgroundColor: const Color(0xFFE8DCEF),
-              backgroundImage: _pfp != null ? FileImage(_pfp!) : null,
-              child: _pfp == null
-                  ? const Icon(Icons.person, size: 64, color: Color(0xFF5E2BC5))
-                  : null,
+              backgroundImage: _pfp != null
+                  ? FileImage(_pfp!)
+                  : const AssetImage('assets/default_pfp.png') as ImageProvider,
             ),
             Positioned(right: 8, bottom: 8, child: _camBtn()),
           ]),
           const SizedBox(height: 16),
-          Text(_name ?? 'Your name',
+          Text(_name?.isNotEmpty == true ? _name! : 'Your name',
               style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          Text('@$_username', style: const TextStyle(color: Colors.grey)),
+          Text('@${_username ?? ""}',
+              style: const TextStyle(color: Colors.black, fontSize: 16)),
           const SizedBox(height: 8),
-          Text(_email ?? '', style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 8),
-          Text(_phone ?? '', style: const TextStyle(color: Colors.grey)),
+          if ((_email ?? '').isNotEmpty || (_phone ?? '').isNotEmpty)
+            _contactInfoBox(),
           const SizedBox(height: 24),
         ]),
       );
 
-  Widget _camBtn() => Container(
-        width: 40, height: 40,
+  Widget _contactInfoBox() => Container(
+        margin: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white, shape: BoxShape.circle,
+          color: Colors.white.withOpacity(.9),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if ((_email ?? '').isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    const Text('📧', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 6),
+                    const Text('Email: ',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    Expanded(
+                      child: Text(
+                        _email!,
+                        style: const TextStyle(color: Colors.black87),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            if ((_phone ?? '').isNotEmpty)
+              Row(
+                children: [
+                  const Text('📞', style: TextStyle(fontSize: 18)),
+                  const SizedBox(width: 6),
+                  const Text('Phone: ',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Expanded(
+                    child: Text(
+                      _phone!,
+                      style: const TextStyle(color: Colors.black87),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                ],
+              ),
+          ],
+        ),
+      );
+
+  Widget _camBtn() => Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
           border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(.1), blurRadius: 8, offset: const Offset(0,4))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(.1),
+                blurRadius: 8,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: IconButton(
-          icon: const Icon(Icons.camera_alt, size: 20, color: Color(0xFF4B5563)),
+          icon:
+              const Icon(Icons.camera_alt, size: 20, color: Color(0xFF4B5563)),
           padding: EdgeInsets.zero,
           onPressed: () => _showPickSheet(),
         ),
@@ -347,40 +576,82 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
 
   Widget _tagSection() => Padding(
-        padding: EdgeInsets.only(left: 16, right: 16, bottom: _navBarHeight + 12),
-        child: Container(
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(5)),
-          constraints: const BoxConstraints(maxHeight: 332),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(children: [
-              Expanded(
-                child: Stack(children: [
-                  SingleChildScrollView(
-                    controller: _tagScroll,
-                    child: Wrap(
-                      spacing: 12, runSpacing: 12,
-                      children: [
-                        for (int i = 0; i < _tags.length; i++)
-                          _draggableChip(_tags[i], i),
-                        _showAddInput ? _inputChip() : _addChipBtn(),
-                      ],
-                    ),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: SizedBox(
+          // fixed height so it doesn’t resize when tags are added
+          height: 300,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Column(
+              children: [
+                // header row with label and plus
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      const Text('Hobbies 🎯:',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {
+                          setState(() => _showAddInput = true);
+                          Future.delayed(
+                              const Duration(milliseconds: 90),
+                              () => _tagFocus.requestFocus());
+                        },
+                        icon: const Icon(Icons.add, size: 24),
+                        tooltip: 'Add hobby',
+                      ),
+                    ],
                   ),
-                  if (_syncing)
-                    const Positioned(top: 0, right: 0, child: SizedBox(
-                      width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2),
-                    )),
-                ]),
-              ),
-              if (_tags.length > 2)
-                const Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Text('Drag to reorder • Tap red × to delete',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
                 ),
-            ]),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // scrollable tags area
+                      SingleChildScrollView(
+                        controller: _tagScroll,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            for (int i = 0; i < _tags.length; i++)
+                              _draggableChip(_tags[i], i),
+                            _showAddInput ? _inputChip() : const SizedBox.shrink(),
+                          ],
+                        ),
+                      ),
+                      if (_syncing)
+                        const Positioned(
+                          top: 6,
+                          right: 6,
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (_tags.length > 2)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: Text('Drag to reorder • Tap red × to delete',
+                        textAlign: TextAlign.center,
+                        style:
+                            TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+                  ),
+              ],
+            ),
           ),
         ),
       );
@@ -396,7 +667,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       );
 
-  Widget _chip(String txt, {VoidCallback? onRemove, bool elevated = false}) => Stack(
+  Widget _chip(String txt, {VoidCallback? onRemove, bool elevated = false}) =>
+      Stack(
         clipBehavior: Clip.none,
         children: [
           Material(
@@ -404,18 +676,24 @@ class _ProfileScreenState extends State<ProfileScreen>
             borderRadius: BorderRadius.circular(5),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-              decoration: BoxDecoration(color: const Color(0xFF7C91ED), borderRadius: BorderRadius.circular(5)),
-              child: Text(txt, style: const TextStyle(color: Colors.white, fontSize: 18)),
+              decoration: BoxDecoration(
+                  color: const Color(0xFF7C91ED),
+                  borderRadius: BorderRadius.circular(5)),
+              child: Text(txt,
+                  style: const TextStyle(color: Colors.white, fontSize: 18)),
             ),
           ),
           if (onRemove != null)
             Positioned(
-              right: -8, top: -8,
+              right: -8,
+              top: -8,
               child: GestureDetector(
                 onTap: onRemove,
                 child: Container(
-                  width: 20, height: 20,
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  width: 20,
+                  height: 20,
+                  decoration:
+                      const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                   child: const Icon(Icons.close, size: 12, color: Colors.white),
                 ),
               ),
@@ -426,14 +704,17 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _addChipBtn() => GestureDetector(
         onTap: () {
           setState(() => _showAddInput = true);
-          Future.delayed(const Duration(milliseconds: 90), () => _tagFocus.requestFocus());
+          Future.delayed(const Duration(milliseconds: 90),
+              () => _tagFocus.requestFocus());
         },
         child: const Icon(Icons.add, size: 24),
       );
 
   Widget _inputChip() => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(color: const Color(0xFF7C91ED), borderRadius: BorderRadius.circular(5)),
+        decoration: BoxDecoration(
+            color: const Color(0xFF7C91ED),
+            borderRadius: BorderRadius.circular(5)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 80, maxWidth: 120),
@@ -455,32 +736,30 @@ class _ProfileScreenState extends State<ProfileScreen>
           const SizedBox(width: 8),
           GestureDetector(onTap: _addTag, child: const Icon(Icons.add, size: 16, color: Colors.white)),
           const SizedBox(width: 4),
-          GestureDetector(onTap: () {
-            setState(() => _showAddInput = false);
-            _tagCtl.clear();
-          }, child: const Icon(Icons.close, size: 16, color: Colors.white)),
+          GestureDetector(
+              onTap: () {
+                setState(() => _showAddInput = false);
+                _tagCtl.clear();
+              },
+              child: const Icon(Icons.close, size: 16, color: Colors.white)),
         ]),
       );
 
-  Widget _bottomNav() => Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          height: _navBarHeight,
-          width: double.infinity,
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, -4))],
-          ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-            _navItem(Icons.people_alt, 'Friends', onTap: () {}),
-            _navItem(Icons.home_rounded, 'Community', onTap: () {}),
-            const SizedBox(width: _centerFabSize),
-            _navItem(Icons.link_outlined, 'Links', onTap: () {}),
-            _navItem(Icons.person_outline, 'Profile', isActive: true, onTap: () {}),
-          ]),
+  Widget _bottomNav() => Container(
+        height: _navBarHeight + MediaQuery.of(context).padding.bottom,
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, -4))],
         ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+          _navItem(Icons.people_alt, 'Friends', onTap: () {}),
+          _navItem(Icons.home_rounded, 'Comunity', onTap: () {}),
+          const SizedBox(width: _centerFabSize),
+          _navItem(Icons.link_outlined, 'Links', onTap: () {}),
+          _navItem(Icons.person_outline, 'Profile', isActive: true, onTap: () {}),
+        ]),
       );
 
   Widget _navItem(IconData ic, String lbl, {bool isActive = false, required VoidCallback onTap}) =>
@@ -491,51 +770,36 @@ class _ProfileScreenState extends State<ProfileScreen>
         },
         borderRadius: BorderRadius.circular(8),
         child: SizedBox(
-          width: 64,
+          width: 60,
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Container(
               padding: const EdgeInsets.all(4),
               decoration: isActive
                   ? BoxDecoration(border: Border.all(color: Colors.purple, width: 2), borderRadius: BorderRadius.circular(6))
                   : null,
-              child: Icon(ic, size: 21, color: isActive ? Colors.purple : const Color(0xFF4B5563)),
+              child: Icon(ic, size: 20, color: isActive ? Colors.purple : const Color(0xFF4B5563)),
             ),
-            const SizedBox(height: 4),
-            Text(lbl, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isActive ? Colors.purple : Colors.black)),
+            const SizedBox(height: 2),
+            Text(lbl,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isActive ? Colors.purple : Colors.black)),
           ]),
         ),
       );
 
-  Widget _fabPlus() => Positioned(
-        bottom: _navBarHeight - (_centerFabSize / 2) - 6,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CASScreen()));
-            },
-            child: Container(
-              width: _centerFabSize,
-              height: _centerFabSize,
-              decoration: const BoxDecoration(
-                color: Colors.deepPurpleAccent,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
-              ),
-              child: const Center(child: Icon(Icons.add, color: Colors.white, size: 32)),
-            ),
+  Widget _fabPlusContent() => GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CASScreen()));
+        },
+        child: Container(
+          width: _centerFabSize,
+          height: _centerFabSize,
+          decoration: const BoxDecoration(
+            color: Colors.deepPurpleAccent,
+            shape: BoxShape.circle,
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
           ),
+          child: const Center(child: Icon(Icons.add, color: Colors.white, size: 32)),
         ),
       );
 }
-
-
-//Quick test
-//1. Log in → call SessionManager().update(...) with the token & userID.
-//2. Open Profile; the chips load from /api/users/{id}/hobbies.
-//3. Add, reorder, or delete chips — the list is immediately PUT back.
-
-//That’s it — your hobbies are now part of the persisted user profile and stay
-//up‑to‑date with one tidy service class and a few lines in ProfileScreen.

@@ -11,85 +11,39 @@
 //  • Guests (isGuest == true) just see a friendly message.
 //  • All sizing / colours match the profile & map screens so it
 //    drops into the app without visual hiccups.
-//
+// lib/friends_screen.dart
+// lib/friends_screen.dart
+
+// lib/friends_screen.dart
+// lib/friends_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'add_a_friend.dart'; 
+import 'package:http/http.dart' as http;
 
-import 'cas.dart';                // for the centred +
-import 'session_manager.dart';   // to detect guest / user‑id
+import 'session_manager.dart';
+import 'models/friend.dart';
+import 'services/friend_service.dart' show FriendService;
+import 'add_a_friend.dart';
+import 'cas.dart'; // for the centered “+” FAB
 
-/* ───── layout constants (same as other screens) ───── */
 const double _navBarHeight  = 88;
 const double _centerFabSize = 64;
 
-/* ───── simple POJO for a friend ───── */
-class Friend {
-  final String id;
-  final String name;
-  final String username;
-  final String avatarUrl;
-
-  /// UI‑only for now – will be filled by backend later
-  final String where;          // e.g. “Ann Arbor”
-  final int    lastSeen;       // minutes ago
-
-  Friend(
-    this.id,
-    this.name,
-    this.username,
-    this.avatarUrl, {
-    required this.where,
-    required this.lastSeen,
-  });
-}
-
-final List<Friend> _dummyFriends = [
-  Friend('1','Tony Soprano','@waste_mgmt',
-         'https://i.pravatar.cc/150?img=68',
-         where: 'Ann Arbor',  lastSeen: 24),
-  Friend('2','Walter White','@heisenberg',
-         'https://i.pravatar.cc/150?img=32',
-         where: 'Detroit',    lastSeen: 5),
-  Friend('3','Marty Byrde','@financials',
-         'https://i.pravatar.cc/150?img=15',
-         where: 'Chicago',    lastSeen: 120),
-  Friend('d4', 'Michael Scott',  '@dundermifflin',
-          'https://i.pravatar.cc/150?img=12',
-          where: 'Dubai',    lastSeen: 51),
-];
-
-/* ═════════════════  FriendsScreen  ═════════════════ */
 class FriendsScreen extends StatefulWidget {
-  const FriendsScreen({super.key});
-  @override State<FriendsScreen> createState() => _FriendsScreenState();
-}
-// ── tiny header with a back button ──
-Widget _header(BuildContext ctx) => Padding(
-  padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
-  child: Row(
-    children: [
-      IconButton(
-        icon: const Icon(Icons.arrow_back,
-            size: 30, color: Color(0xFF4B5563)),
-        onPressed: () => Navigator.pop(ctx),   // ← pops back to MapScreen
-      ),
-      const SizedBox(width: 8),
-      const Text('Friends',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-    ],
-  ),
-);
+  const FriendsScreen({Key? key}) : super(key: key);
 
+  @override
+  State<FriendsScreen> createState() => _FriendsScreenState();
+}
 
 class _FriendsScreenState extends State<FriendsScreen> {
-  bool       _loading = true;
-  bool       _isGuest = true;
+  final _service = FriendService(http.Client());
+  bool         _loading = true;
+  bool         _isGuest = true;
   List<Friend> _friends = [];
+  String?      _error;
 
-  /* ── lifecycle ── */
   @override
   void initState() {
     super.initState();
@@ -97,18 +51,45 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> _bootstrap() async {
-  _isGuest = SessionManager.instance.isGuest;
+    _isGuest = SessionManager.instance.isGuest;
+    if (!_isGuest) {
+      try {
+        _friends = await _service.listFriends();
+      } catch (e) {
+        _error = 'Failed to load friends: $e';
+      }
+    }
+    setState(() => _loading = false);
+  }
 
-  // always inject the stand‑ins while backend isn’t ready
-  _friends = List.of(_dummyFriends);
+  Widget _header(BuildContext ctx) => Padding(
+        padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back,
+                  size: 30, color: Color(0xFF4B5563)),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+            const SizedBox(width: 8),
+            const Text('Friends',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+            const Spacer(),
+            // ← new add-friend button
+            IconButton(
+              icon: const Icon(Icons.person_add, color: Color(0xFF4B5563)),
+              tooltip: 'Add a friend',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(ctx).push(
+                  MaterialPageRoute(builder: (_) => const AddFriendScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      );
 
-  _isGuest = false;          // <── force‑show list
-
-  if (mounted) setState(() => _loading = false);
-}
-
-
-  /* ═════════════════  BUILD  ═════════════════ */
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -121,15 +102,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFFB3FFFF), Color(0xFFBABAF2)])),
+            colors: [Color(0xFFB3FFFF), Color(0xFFBABAF2)],
+          ),
+        ),
         child: Stack(alignment: Alignment.bottomCenter, children: [
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
-                child: Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _header(context),                // ← always visible
+                  _header(context),
                   const SizedBox(height: 16),
                   Expanded(
                     child: _isGuest
@@ -139,35 +122,43 @@ class _FriendsScreenState extends State<FriendsScreen> {
                               style: TextStyle(fontSize: 18),
                             ),
                           )
-                        : _friendList(),
+                        : _buildFriendList(),
                   ),
                 ],
               ),
             ),
           ),
-          _bottomNav(context),
-          _fabPlus(context),
+          _buildBottomNav(context),
+          _buildFabPlus(context),
         ]),
       ),
     );
   }
 
-  /* ───── listview with add‑button header ───── */
-  Widget _friendList() => ListView.builder(
-        padding: EdgeInsets.only(bottom: _navBarHeight + 12),
-        itemCount: _friends.length + 1,   // +1 for the “add” tile
-        itemBuilder: (ctx, i) {
-          if (i == 0) return _addTile();
-          final f = _friends[i - 1];
-          return _friendTile(f);
-        });
+  Widget _buildFriendList() {
+    if (_error != null) {
+      return Center(
+          child: Text(_error!, style: const TextStyle(color: Colors.red)));
+    }
+    if (_friends.isEmpty) {
+      return const Center(
+          child: Text('You have no friends yet.',
+              style: TextStyle(fontSize: 18)));
+    }
+    return ListView.builder(
+      padding: EdgeInsets.only(bottom: _navBarHeight + 12),
+      itemCount: _friends.length + 1,
+      itemBuilder: (ctx, i) {
+        if (i == 0) return _buildAddTile();
+        final f = _friends[i - 1];
+        return _buildFriendTile(f);
+      },
+    );
+  }
 
-  Widget _addTile() => GestureDetector(
-        onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AddFriendScreen()),
-            );
-          },
+  Widget _buildAddTile() => GestureDetector(
+        onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AddFriendScreen())),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
@@ -189,74 +180,71 @@ class _FriendsScreenState extends State<FriendsScreen> {
         ),
       );
 
-  Widget _friendTile(Friend f) => Container(
-  margin: const EdgeInsets.only(bottom: 12),
-  padding: const EdgeInsets.all(12),
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Row(
-    children: [
-      CircleAvatar(radius: 28, backgroundImage: NetworkImage(f.avatarUrl)),
-      const SizedBox(width: 16),
-
-      // ── left block: name + @user
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildFriendTile(Friend f) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
           children: [
-            Text(f.name,  style: const TextStyle(fontSize: 18)),
-            Text(f.username,
-                style: const TextStyle(
-                    fontSize: 14, color: Colors.grey, letterSpacing: .2)),
+            CircleAvatar(
+              radius: 28,
+              backgroundImage: f.avatarUrl.isNotEmpty
+                  ? NetworkImage(f.avatarUrl)
+                  : const AssetImage('assets/default_pfp.png')
+                      as ImageProvider,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(f.name, style: const TextStyle(fontSize: 18)),
+                  Text('@${f.username}',
+                      style: const TextStyle(
+                          fontSize: 14, color: Colors.grey, letterSpacing: .2)),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('in ${f.where}',
+                    style: const TextStyle(fontSize: 14, color: Colors.green)),
+                Text('${f.lastSeen} m ago',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
           ],
         ),
-      ),
+      );
 
-      // ── right block: location + time
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text('in ${f.where}',
-              style: const TextStyle(
-                  fontSize: 14, color: Colors.green)),
-          Text('${f.lastSeen} m ago',
-              style: const TextStyle(
-                  fontSize: 12, color: Colors.grey)),
-        ],
-      ),
-    ],
-  ),
-);
-
-
-  /* ───── bottom nav (Friends highlighted) ───── */
-  Widget _bottomNav(BuildContext ctx) => Align(
+  Widget _buildBottomNav(BuildContext ctx) => Align(
         alignment: Alignment.bottomCenter,
         child: Container(
           height: _navBarHeight,
           width: double.infinity,
-          padding:
-              EdgeInsets.only(bottom: MediaQuery.of(ctx).padding.bottom),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).padding.bottom),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
-              BoxShadow(color: Colors.black26,
-                  blurRadius: 12, offset: Offset(0, -4))
+              BoxShadow(
+                  color: Colors.black26, blurRadius: 12, offset: Offset(0, -4))
             ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(Icons.people_alt,   'Friends',
+              _navItem(Icons.people_alt, 'Friends',
                   isActive: true, onTap: () {}),
-              _navItem(Icons.home_rounded, 'Comunity',    onTap: () {}),
+              _navItem(Icons.home_rounded, 'Comunity', onTap: () {}),
               const SizedBox(width: _centerFabSize),
-              _navItem(Icons.link_outlined, 'Links',  onTap: () {}),
-              _navItem(Icons.person_outline,'Profile', onTap: () {
-                Navigator.pop(ctx);              // go back to profile
+              _navItem(Icons.link_outlined, 'Links', onTap: () {}),
+              _navItem(Icons.person_outline, 'Profile', onTap: () {
+                Navigator.pushReplacementNamed(ctx, '/profile');
               }),
             ],
           ),
@@ -281,11 +269,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 decoration: isActive
                     ? BoxDecoration(
                         border: Border.all(color: Colors.purple, width: 2),
-                        borderRadius: BorderRadius.circular(6))
+                        borderRadius: BorderRadius.circular(6),
+                      )
                     : null,
-                child: Icon(icon, size: 18,                         // ⬅︎ 21 → 18
-                    color: isActive ? Colors.purple : const Color(0xFF4B5563))),
-                const SizedBox(height: 2), 
+                child: Icon(icon,
+                    size: 18,
+                    color: isActive ? Colors.purple : const Color(0xFF4B5563)),
+              ),
+              const SizedBox(height: 2),
               Text(label,
                   style: TextStyle(
                       fontSize: 12,
@@ -297,12 +288,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
         ),
       );
 
-  /* ───── centre FAB ───── */
-  Widget _fabPlus(BuildContext ctx) => Positioned(
+  Widget _buildFabPlus(BuildContext ctx) => Positioned(
         bottom: _navBarHeight - (_centerFabSize / 2) - 6,
         child: GestureDetector(
-          onTap: () => Navigator.of(ctx).push(
-              MaterialPageRoute(builder: (_) => const CASScreen())),
+          onTap: () => Navigator.of(ctx)
+              .push(MaterialPageRoute(builder: (_) => const CASScreen())),
           child: Container(
             width: _centerFabSize,
             height: _centerFabSize,
@@ -310,12 +300,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
               color: Colors.deepPurpleAccent,
               shape: BoxShape.circle,
               boxShadow: const [
-                BoxShadow(color: Colors.black26,
-                    blurRadius: 10, offset: Offset(0, 4)),
+                BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
               ],
             ),
-            child: const Center(
-                child: Icon(Icons.add, color: Colors.white, size: 32)),
+            child: const Center(child: Icon(Icons.add, color: Colors.white, size: 32)),
           ),
         ),
       );

@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -13,19 +14,18 @@ class Config {
   static int get apiTimeout => isProduction ? 15000 : 30000; // ms
 
   // --- Paths/Endpoints ---
-  static String universityPicturesEndpoint(String folder) => 
-      '${serverBaseUrl}/university_pictures/$folder';
+  static String universityPicturesEndpoint(String folder) =>
+      '$serverBaseUrl/university_pictures/$folder';
 
   // --- Validation ---
   static void validate() {
     mapboxAccessToken; // Will throw if missing
-    serverBaseUrl;     // Will throw if missing or invalid in production
+    serverBaseUrl;     // Will throw if missing/invalid in production
   }
 
   // --- Development Tools ---
   static void printConfig() {
     if (isProduction) return;
-    
     debugPrint('⚙️ Application Configuration:');
     debugPrint('• Environment: ${isProduction ? 'Production' : 'Development'}');
     debugPrint('• Server URL: $serverBaseUrl');
@@ -43,24 +43,38 @@ class Config {
   }
 
   static String _getServerUrl() {
-    final url = dotenv.get('GO_SERVER_HTTP', fallback: '').trim();
-    
-    if (url.isEmpty) {
-      if (isProduction) {
-        throw Exception('Server URL not configured');
+    // first look for a GO_SERVER_HTTP override in .env
+    final raw = dotenv.get('GO_SERVER_HTTP', fallback: '').trim();
+    String url;
+
+    if (raw.isEmpty) {
+      // no override: pick a sensible default
+      if (Platform.isAndroid) {
+        url = 'http://10.0.2.2:8080';
+      } else {
+        if (isProduction) {
+          throw Exception('Server URL not configured in production');
+        }
+        debugPrint('⚠️ Using default localhost URL');
+        url = 'http://localhost:8080';
       }
-      debugPrint('⚠️ Using default localhost URL');
-      return 'http://localhost:8080';
+    } else {
+      // user supplied a URL: if it contains "localhost" on Android, swap it
+      if (Platform.isAndroid && raw.contains('localhost')) {
+        url = raw.replaceFirst('localhost', '10.0.2.2');
+      } else {
+        url = raw;
+      }
     }
 
+    // enforce HTTPS in prod
     if (isProduction && url.startsWith('http://')) {
-      throw Exception('Production requires HTTPS');
+      throw Exception('Production requires HTTPS URLs');
     }
-
+    // warn in dev
     if (isDevelopment && url.startsWith('http://')) {
-      debugPrint('⚠️ Development using HTTP - switch to HTTPS for testing');
+      debugPrint('⚠️ Development using HTTP — switch to HTTPS for testing');
     }
-
     return url;
   }
 }

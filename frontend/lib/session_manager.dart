@@ -1,3 +1,6 @@
+// lib/session_manager.dart
+
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SessionManager {
@@ -5,64 +8,17 @@ class SessionManager {
   SessionManager._();
   static final SessionManager instance = SessionManager._();
 
-  /* ---------- in‑memory state ---------- */
+  /* ---------- in-memory state ---------- */
   String? _userId; // null / guest
   String? _jwt;
-  String? _primaryCommunityId; // null until a community is chosen
-  String? _token;
   String? _username;
-  String? get authToken => _token;
-
-  Future<void> saveAuth(String token, String userId, String username) async {
-    _token = token;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt', token);
-    await prefs.setString('user_id', userId);
-    await prefs.setString('username', username);
-  }
-
-  Future<void> loadFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('jwt');
-    _userId = prefs.getString('user_id');
-    _username = prefs.getString('username');
-  }
+  String? _primaryCommunityId; // null until chosen
 
   /* ---------- convenience ---------- */
   bool get isGuest => _userId == null || _userId!.isEmpty;
-
-  /// Synchronous getter – used by UI layers that just need the cached value.
   String? get primaryCommunityIdSync => _primaryCommunityId;
 
-  /* ---------- update (call after login / join community) ---------- */
-  ///
-  /// Pass `primaryCommunityId` *only* when it changes (e.g. user just joined
-  /// or switched). Leave it `null` to keep the previous value.
-  ///
-  ///
-
-  Future<void> update({
-    required String? userId,
-    required String? jwt,
-    String? primaryCommunity,
-  }) async {
-    _userId = userId;
-    _jwt = jwt;
-    _primaryCommunityId = primaryCommunity;
-
-    final sp = await SharedPreferences.getInstance();
-    if (isGuest) {
-      await sp.clear(); // wipe everything for guests
-    }
-
-    await sp.setString('user_id', userId!);
-    await sp.setString('jwt', jwt!);
-    if (primaryCommunity != null) {
-      await sp.setString('primary_community', primaryCommunity!);
-    }
-  }
-
-  /* ---------- lazy async getters ---------- */
+  /// Public accessors
   Future<String?> get userId async {
     if (_userId != null) return _userId;
     final sp = await SharedPreferences.getInstance();
@@ -77,19 +33,71 @@ class SessionManager {
     return _jwt;
   }
 
+  Future<String?> get username async {
+    if (_username != null) return _username;
+    final sp = await SharedPreferences.getInstance();
+    _username = sp.getString('username');
+    return _username;
+  }
+
   Future<String?> get primaryCommunityId async {
     if (_primaryCommunityId != null) return _primaryCommunityId;
     final sp = await SharedPreferences.getInstance();
     _primaryCommunityId = sp.getString('primary_community');
     return _primaryCommunityId;
   }
+
+  /// Load everything from prefs into memory.
+  Future<void> loadFromPrefs() async {
+    final sp = await SharedPreferences.getInstance();
+    _jwt = sp.getString('jwt');
+    _userId = sp.getString('user_id');
+    _username = sp.getString('username');
+    _primaryCommunityId = sp.getString('primary_community');
+    if (_jwt != null && kDebugMode) {
+      debugPrint('🛠️ [SessionManager] Loaded JWT from prefs: $_jwt');
+    }
+  }
+
+  /// Update session state (e.g., after login/signup). All three required.
+  Future<void> update({
+    required String? userId,
+    required String? jwt,
+    required String? username,
+    String? primaryCommunity,
+  }) async {
+    _userId = userId;
+    _jwt = jwt;
+    _username = username;
+    if (primaryCommunity != null) {
+      _primaryCommunityId = primaryCommunity;
+    }
+
+    final sp = await SharedPreferences.getInstance();
+    if (isGuest) {
+      await sp.clear();
+      if (kDebugMode) {
+        debugPrint('🛠️ [SessionManager] Cleared session (guest).');
+      }
+      return;
+    }
+
+    await sp.setString('user_id', userId!);
+    await sp.setString('jwt', jwt!);
+    await sp.setString('username', username!);
+    if (primaryCommunity != null) {
+      await sp.setString('primary_community', primaryCommunity);
+    }
+
+    // Print for debugging
+    if (kDebugMode) {
+      debugPrint('🛠️ [SessionManager] Saved session:');
+      debugPrint('    • userId: $userId');
+      debugPrint('    • username: $username');
+      debugPrint('    • jwt: $jwt');
+      if (primaryCommunity != null) {
+        debugPrint('    • primaryCommunity: $primaryCommunity');
+      }
+    }
+  }
 }
-
-
-
-
-//## 1  Minimal “session” helper – store token / user ID once after login
-//Where to call update()?
-//When you receive the AuthResponse after /userlogin
-//simply run
-//SessionManager().update(token: resp.accessToken, userId: resp.userId);
