@@ -78,20 +78,20 @@ func GetUserProfile(c *gin.Context) {
 		return
 	}
 
-	var incomingRequest struct {
-		UserID uuid.UUID `json:"user_id"`
-	}
+	// var incomingRequest struct {
+	// 	UserID uuid.UUID `json:"user_id"`
+	// }
 
-	err = c.BindJSON(&incomingRequest)
+	// err = c.BindJSON(&incomingRequest)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, nil)
-		return
-	} else {
-		if incomingRequest.UserID != uuid.Nil {
-			userID = incomingRequest.UserID
-		}
-	}
+	// if err != nil {
+	// 	c.IndentedJSON(http.StatusBadRequest, nil)
+	// 	return
+	// } else {
+	// 	if incomingRequest.UserID != uuid.Nil {
+	// 		userID = incomingRequest.UserID
+	// 	}
+	// }
 
 	// query := `
 	// 	SELECT bio, birthdate, hobbies, last_active, last_active_location, functions_attended, rating FROM user_profiles WHERE user_id = $1;
