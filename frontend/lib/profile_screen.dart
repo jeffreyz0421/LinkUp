@@ -64,8 +64,8 @@ class ProfileService {
     if (resp.statusCode == 401 || resp.statusCode == 403) {
       throw Exception('unauthorized');
     }
-    if (resp.statusCode != 200) {
-      throw Exception('Failed to load profile (${resp.statusCode}): ${resp.body}');
+    if (resp.statusCode != 200 && resp.statusCode != 202) {
+    throw Exception('Failed to load profile (${resp.statusCode}): ${resp.body}');
     }
     final body = jsonDecode(resp.body) as Map<String, dynamic>;
     return Profile.fromJson(body);

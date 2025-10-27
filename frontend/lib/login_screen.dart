@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final payload = _buildLoginPayload(identifier, password);
 
     try {
-      final uri = Uri.parse('${Config.serverBaseUrl}/api/user/login');
+      final uri = Uri.parse('${Config.serverBaseUrl}/api/users/login');
       final resp = await http
           .post(
             uri,

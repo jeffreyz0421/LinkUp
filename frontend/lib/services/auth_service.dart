@@ -93,7 +93,7 @@ class AuthService {
     required String name,
     required String phoneNumber,
   }) async {
-    final uri = Uri.parse('$_base/api/user/signup');
+    final uri = Uri.parse('$_base/api/users/signup');
     final payload = {
       'username': username.trim(),
       'email': email.trim(),

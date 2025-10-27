@@ -14,23 +14,33 @@ class ProfileService {
 
   /// GET full composite profile (includes hobbies, name, username, etc.)
   Future<Map<String, dynamic>> getProfileRaw() async {
-    final token = await SessionManager.instance.jwt;
-    final uri = Uri.parse('$_base/api/users');
+  final token = await SessionManager.instance.jwt;
+  final uri = Uri.parse('$_base/api/users');
 
-    final resp = await _client.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    ).timeout(Duration(milliseconds: Config.apiTimeout));
+  final resp = await _client.get(
+    uri,
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  ).timeout(Duration(milliseconds: Config.apiTimeout));
 
-    if (resp.statusCode == 200) {
-      return jsonDecode(resp.body) as Map<String, dynamic>;
+  // ✅ Accept 200 and 202 as success
+  if (resp.statusCode == 200 || resp.statusCode == 202) {
+    if (resp.body.isEmpty) {
+      // Some backends send 202 with no body — return empty map
+      return {};
     }
 
-    throw Exception('getProfile failed – HTTP ${resp.statusCode}: ${resp.body}');
+    try {
+      return jsonDecode(resp.body) as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Failed to parse profile JSON: ${resp.body}');
+    }
   }
+
+  throw Exception('getProfile failed – HTTP ${resp.statusCode}: ${resp.body}');
+}
 
   Future<List<String>> getHobbies() async {
     final raw = await getProfileRaw();

@@ -128,7 +128,7 @@ class _SignupScreenState extends State<SignupScreen> {
     };
 
     try {
-      final signupUri = Uri.parse('${Config.serverBaseUrl}/api/user/signup');
+      final signupUri = Uri.parse('${Config.serverBaseUrl}/api/users/signup');
       final resp = await http
           .post(
             signupUri,
@@ -170,7 +170,7 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       } else if (resp.statusCode == 409) {
         // Duplicate: try login instead
-        final loginUri = Uri.parse('${Config.serverBaseUrl}/api/user/login');
+        final loginUri = Uri.parse('${Config.serverBaseUrl}/api/users/login');
         final loginResp = await http
             .post(
               loginUri,

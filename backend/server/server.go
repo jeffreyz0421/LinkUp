@@ -21,11 +21,9 @@ func main() {
 	}
 
 	dbConnection, err := pgxpool.New(context.Background(), connectionURL)
-
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v\n", err)
 	}
-
 	defer dbConnection.Close()
 
 	err = dbConnection.Ping(context.Background())
@@ -33,17 +31,19 @@ func main() {
 		log.Fatalf("Failed to verify database connection: %v", err)
 	}
 
-	fmt.Println("Successfully connected to SQL Database")
+	fmt.Println("✅ Successfully connected to SQL Database")
 
-	// Set up the router for the HTTP requests
 	router := gin.Default()
 
+	// Attach DB to every request context
 	router.Use(func(c *gin.Context) {
 		c.Set("db", dbConnection)
 		c.Next()
 	})
 
-	// Group endpoints with corresponding middleware
+	// ───────────────────────────────
+	//  Public routes (signup, login)
+	// ───────────────────────────────
 	publicRoutes := router.Group("/api")
 	{
 		userRoutes := publicRoutes.Group("/users")
@@ -53,6 +53,9 @@ func main() {
 		}
 	}
 
+	// ───────────────────────────────
+	//  Protected routes (auth required)
+	// ───────────────────────────────
 	protectedRoutes := router.Group("/api")
 	protectedRoutes.Use(auth.AuthMiddleware())
 	protectedRoutes.Use(api.UpdateLastLocationMiddleware())
@@ -70,19 +73,27 @@ func main() {
 			linkupRoutes.POST("/:id/join", events.JoinLinkup)
 			linkupRoutes.DELETE("/:id", events.CancelLinkup)
 		}
+
 		userRoutes := protectedRoutes.Group("/users")
 		{
+			// ⚡ NEW SEARCH ROUTE
+			userRoutes.GET("/search", api.SearchUsers)
+
 			friendRoutes := userRoutes.Group("/friend")
 			{
 				friendRoutes.GET("", api.GetFriends)
 				friendRoutes.POST("", api.SendFriendRequest)
 				friendRoutes.PUT("", api.AcceptFriendRequest)
 			}
+
 			userRoutes.GET("", api.GetUserProfile)
 			userRoutes.PUT("", api.UpdateProfile)
 			userRoutes.PUT("/location", api.UpdateUserLocation)
 		}
 	}
 
+	// ───────────────────────────────
+	//  Start server
+	// ───────────────────────────────
 	router.Run("localhost:8080")
 }

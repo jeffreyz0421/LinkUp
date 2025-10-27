@@ -134,6 +134,56 @@ func GetUserProfile(c *gin.Context) {
 	c.IndentedJSON(http.StatusAccepted, userProfile)
 }
 
+func SearchUsers(c *gin.Context) {
+	db := c.MustGet("db").(*pgxpool.Pool)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	queryText := c.Query("username")
+	if queryText == "" {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "missing username query"})
+		return
+	}
+
+	// limit to 20 results for performance
+	query := `
+        SELECT u.user_id, u.username, u.name, COALESCE(up.bio, '') as bio
+        FROM users u
+        LEFT JOIN user_profiles up ON u.user_id = up.user_id
+        WHERE LOWER(u.username) LIKE LOWER($1)
+        ORDER BY u.username
+        LIMIT 20;
+    `
+
+	rows, err := db.Query(ctx, query, queryText+"%")
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "query failed"})
+		return
+	}
+	defer rows.Close()
+
+	type PublicUser struct {
+		ID       uuid.UUID `json:"id"`
+		Name     string    `json:"name"`
+		Username string    `json:"username"`
+		Avatar   string    `json:"avatar_url"`
+	}
+
+	users := []PublicUser{}
+	for rows.Next() {
+		var u PublicUser
+		u.Avatar = "" // you can extend later
+		if err := rows.Scan(&u.ID, &u.Name, &u.Username); err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		users = append(users, u)
+	}
+
+	c.IndentedJSON(http.StatusOK, users)
+}
+
+
 type FriendData struct {
 	FriendID uuid.UUID `json:"friend_id"`
 	Status   string    `json:"status"`

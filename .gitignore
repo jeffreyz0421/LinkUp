@@ -1,2 +1,4 @@
 dev_*
 devtest_*.DS_Store
+.DS_Store
+LinkUp_frontend/
